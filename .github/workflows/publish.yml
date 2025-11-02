@@ -1,0 +1,201 @@
+name: Publish to npm
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/*/package.json'
+
+jobs:
+  # First run all tests
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run type tests
+        run: pnpm -r test:type
+
+      - name: Build packages
+        run: pnpm -r run build
+
+      - name: Run unit tests
+        run: pnpm test:run
+
+  # Detect which packages have version changes
+  detect-changes:
+    runs-on: ubuntu-latest
+    needs: test
+    outputs:
+      core-changed: ${{ steps.check-core.outputs.changed }}
+      vue-changed: ${{ steps.check-vue.outputs.changed }}
+      core-version: ${{ steps.get-versions.outputs.core-version }}
+      vue-version: ${{ steps.get-versions.outputs.vue-version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if core package.json changed
+        id: check-core
+        run: |
+          if git diff HEAD^ HEAD --name-only | grep -q "packages/core/package.json"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check if vue package.json changed
+        id: check-vue
+        run: |
+          if git diff HEAD^ HEAD --name-only | grep -q "packages/vue/package.json"; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get package versions
+        id: get-versions
+        run: |
+          CORE_VERSION=$(node -p "require('./packages/core/package.json').version")
+          VUE_VERSION=$(node -p "require('./packages/vue/package.json').version")
+          echo "core-version=$CORE_VERSION" >> $GITHUB_OUTPUT
+          echo "vue-version=$VUE_VERSION" >> $GITHUB_OUTPUT
+
+  # Publish core package
+  publish-core:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.core-changed == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build core package
+        run: pnpm --filter @alexop/sqlite-core build
+
+      - name: Check if version already published
+        id: check-published
+        run: |
+          VERSION=${{ needs.detect-changes.outputs.core-version }}
+          if npm view @alexop/sqlite-core@$VERSION version 2>/dev/null; then
+            echo "already-published=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Version $VERSION already exists on npm"
+          else
+            echo "already-published=false" >> $GITHUB_OUTPUT
+            echo "✅ Version $VERSION is new, proceeding with publish"
+          fi
+
+      - name: Publish core package
+        if: steps.check-published.outputs.already-published == 'false'
+        run: |
+          cd packages/core
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Git tag for core
+        if: steps.check-published.outputs.already-published == 'false'
+        run: |
+          VERSION=${{ needs.detect-changes.outputs.core-version }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "@alexop/sqlite-core@$VERSION" -m "Release @alexop/sqlite-core@$VERSION"
+          git push origin "@alexop/sqlite-core@$VERSION"
+
+  # Publish vue package (depends on core being published)
+  publish-vue:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, publish-core]
+    if: |
+      always() &&
+      needs.detect-changes.outputs.vue-changed == 'true' &&
+      (needs.publish-core.result == 'success' || needs.publish-core.result == 'skipped')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build vue package
+        run: pnpm --filter @alexop/sqlite-vue build
+
+      - name: Check if version already published
+        id: check-published
+        run: |
+          VERSION=${{ needs.detect-changes.outputs.vue-version }}
+          if npm view @alexop/sqlite-vue@$VERSION version 2>/dev/null; then
+            echo "already-published=true" >> $GITHUB_OUTPUT
+            echo "⚠️  Version $VERSION already exists on npm"
+          else
+            echo "already-published=false" >> $GITHUB_OUTPUT
+            echo "✅ Version $VERSION is new, proceeding with publish"
+          fi
+
+      - name: Publish vue package
+        if: steps.check-published.outputs.already-published == 'false'
+        run: |
+          cd packages/vue
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Git tag for vue
+        if: steps.check-published.outputs.already-published == 'false'
+        run: |
+          VERSION=${{ needs.detect-changes.outputs.vue-version }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "@alexop/sqlite-vue@$VERSION" -m "Release @alexop/sqlite-vue@$VERSION"
+          git push origin "@alexop/sqlite-vue@$VERSION"
