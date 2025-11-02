@@ -1,23 +1,54 @@
 import { sqlite3Worker1Promiser } from "@sqlite.org/sqlite-wasm";
+import type { z } from "zod";
+import { QueryBuilder } from "./query-builder";
+import { InsertBuilder, UpdateBuilder, DeleteBuilder } from "./mutation-builders";
+import type { SchemaRegistry, TableName, TableRow } from "./types";
 
 export type Migration = {
   version: number;
   sql: string;
 };
 
-export type SQLiteClient = {
-  exec: (sql: string, params?: unknown[]) => Promise<any>;
-  query: <T = any>(sql: string, params?: unknown[]) => Promise<T[]>;
-  notifyTable: (table: string) => void;
-  subscribe: (table: string, cb: () => void) => () => void;
+/**
+ * Type-safe SQLite client with Zod schema validation
+ */
+export type SQLiteClient<TSchema extends SchemaRegistry> = {
+  // Query builder for SELECT queries
+  query<TTable extends TableName<TSchema>>(
+    table: TTable
+  ): QueryBuilder<TableRow<TSchema, TTable>>;
+
+  // Mutation builders
+  insert<TTable extends TableName<TSchema>>(
+    table: TTable
+  ): InsertBuilder<TableRow<TSchema, TTable>>;
+
+  update<TTable extends TableName<TSchema>>(
+    table: TTable
+  ): UpdateBuilder<TableRow<TSchema, TTable>>;
+
+  delete<TTable extends TableName<TSchema>>(
+    table: TTable
+  ): DeleteBuilder<TableRow<TSchema, TTable>>;
+
+  // Table change notifications
+  notifyTable(table: TableName<TSchema>): void;
+  subscribe(table: TableName<TSchema>, cb: () => void): () => void;
+
+  // Raw query access for advanced usage
+  exec(sql: string, params?: unknown[]): Promise<any>;
+  raw<T = any>(sql: string, params?: unknown[]): Promise<T[]>;
 };
 
-type Options = {
+type Options<TSchema extends SchemaRegistry> = {
+  schema: TSchema;
   filename: string;
   migrations?: Migration[];
 };
 
-export async function createSQLiteClient(opts: Options): Promise<SQLiteClient> {
+export async function createSQLiteClient<TSchema extends SchemaRegistry>(
+  opts: Options<TSchema>
+): Promise<SQLiteClient<TSchema>> {
   let promiser: ReturnType<typeof sqlite3Worker1Promiser> | null = null;
   let dbId: string | null = null;
 
@@ -40,9 +71,9 @@ export async function createSQLiteClient(opts: Options): Promise<SQLiteClient> {
   async function init() {
     if (promiser && dbId) return;
 
-    promiser = await new Promise(resolve => {
+    promiser = await new Promise((resolve) => {
       const p = sqlite3Worker1Promiser({
-        onready: () => resolve(p)
+        onready: () => resolve(p),
       });
     });
 
@@ -51,7 +82,7 @@ export async function createSQLiteClient(opts: Options): Promise<SQLiteClient> {
     }
 
     const openResponse = await promiser("open", {
-      filename: opts.filename
+      filename: opts.filename,
     });
 
     if (openResponse.type === "error") {
@@ -69,7 +100,7 @@ export async function createSQLiteClient(opts: Options): Promise<SQLiteClient> {
       for (const mig of ordered) {
         await promiser("exec", {
           dbId,
-          sql: mig.sql
+          sql: mig.sql,
         });
       }
     }
@@ -89,7 +120,7 @@ export async function createSQLiteClient(opts: Options): Promise<SQLiteClient> {
       sql,
       bind: params,
       returnValue: "resultRows",
-      rowMode: "object"
+      rowMode: "object",
     });
 
     if (result.type === "error") {
@@ -99,16 +130,51 @@ export async function createSQLiteClient(opts: Options): Promise<SQLiteClient> {
     return result;
   }
 
-  async function query<T = any>(sql: string, params: unknown[] = []) {
+  async function executeQuery<T = any>(
+    sql: string,
+    params: unknown[] = []
+  ): Promise<T[]> {
     const res = await exec(sql, params);
     const rows = res.result?.resultRows ?? [];
     return rows as T[];
   }
 
   return {
-    exec,
-    query,
+    // Query builder
+    query<TTable extends TableName<TSchema>>(table: TTable) {
+      const schema = opts.schema[table] as z.ZodObject<any>;
+      return new QueryBuilder(executeQuery, String(table), schema);
+    },
+
+    // Insert builder
+    insert<TTable extends TableName<TSchema>>(table: TTable) {
+      const schema = opts.schema[table] as z.ZodObject<any>;
+      return new InsertBuilder(executeQuery, String(table), schema);
+    },
+
+    // Update builder
+    update<TTable extends TableName<TSchema>>(table: TTable) {
+      const schema = opts.schema[table] as z.ZodObject<any>;
+      return new UpdateBuilder(executeQuery, String(table), schema);
+    },
+
+    // Delete builder
+    delete<TTable extends TableName<TSchema>>(table: TTable) {
+      return new DeleteBuilder(executeQuery, String(table));
+    },
+
+    // Notifications
     notifyTable: emit,
-    subscribe
+    subscribe,
+
+    // Raw query access
+    exec,
+    raw: executeQuery,
   };
 }
+
+// Re-export types and utilities
+export * from "./types";
+export * from "./zod-utils";
+export { QueryBuilder } from "./query-builder";
+export { InsertBuilder, UpdateBuilder, DeleteBuilder } from "./mutation-builders";

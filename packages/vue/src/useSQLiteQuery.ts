@@ -1,23 +1,34 @@
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, type Ref } from "vue";
 import { useSQLiteClientAsync } from "./useSQLiteClientAsync";
 import type { SQLiteClient } from "@alexop/sqlite-core";
 
-export function useSQLiteQuery<T = any>(
-  sql: string,
-  params: unknown[] = [],
-  watchTables: string[] = []
-) {
-  const rows = ref<T[]>([]);
+export interface UseSQLiteQueryReturn<T> {
+  rows: Ref<T | null>;
+  loading: Ref<boolean>;
+  error: Ref<Error | null>;
+  refresh: () => Promise<void>;
+}
+
+/**
+ * Reactive query composable that uses the query builder
+ * @param queryFn - Function that receives the DB client and returns a query builder result
+ * @param options - Options including tables to watch for changes
+ */
+export function useSQLiteQuery<T>(
+  queryFn: (db: SQLiteClient<any>) => Promise<T>,
+  options: { tables?: string[] } = {}
+): UseSQLiteQueryReturn<T> {
+  const rows = ref<T | null>(null);
   const loading = ref(true);
   const error = ref<Error | null>(null);
-  let db: SQLiteClient | null = null;
+  let db: SQLiteClient<any> | null = null;
   const unsubs: Array<() => void> = [];
 
   async function run() {
     if (!db) return;
     loading.value = true;
     try {
-      rows.value = await db.query<T>(sql, params);
+      rows.value = await queryFn(db);
       error.value = null;
     } catch (e) {
       error.value = e as Error;
@@ -29,10 +40,13 @@ export function useSQLiteQuery<T = any>(
   onMounted(async () => {
     db = await useSQLiteClientAsync();
     await run();
-    watchTables.forEach((table) => {
-      const unsub = db!.subscribe(table, run);
-      unsubs.push(unsub);
-    });
+
+    if (options.tables) {
+      options.tables.forEach((table) => {
+        const unsub = db!.subscribe(table, run);
+        unsubs.push(unsub);
+      });
+    }
   });
 
   onBeforeUnmount(() => {
@@ -40,9 +54,9 @@ export function useSQLiteQuery<T = any>(
   });
 
   return {
-    rows,
+    rows: rows as Ref<T | null>,
     loading,
     error,
-    refresh: run
+    refresh: run,
   };
 }

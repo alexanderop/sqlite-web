@@ -2,10 +2,10 @@
 import { ref } from "vue";
 import { useSQLiteQuery, useSQLiteClientAsync } from "@alexop/sqlite-vue";
 
-const { rows: todos, loading, error, refresh } = useSQLiteQuery(
-  "SELECT * FROM todos ORDER BY rowid DESC",
-  [],
-  ["todos"]
+// Use query builder with type safety
+const { rows: todos, loading, error } = useSQLiteQuery(
+  (db) => db.query("todos").orderBy("createdAt", "DESC").all(),
+  { tables: ["todos"] }
 );
 
 const newTitle = ref("");
@@ -19,20 +19,26 @@ async function addTodo() {
   if (!newTitle.value.trim()) return;
 
   const db = await dbPromise;
-  await db.exec(
-    "INSERT INTO todos (id, title) VALUES (?, ?)",
-    [crypto.randomUUID(), newTitle.value]
-  );
+
+  // Use insert builder with validation
+  await db.insert("todos").values({
+    id: crypto.randomUUID(),
+    title: newTitle.value,
+    completed: false,
+    createdAt: new Date().toISOString(),
+  });
+
   db.notifyTable("todos");
   newTitle.value = "";
-  await refresh();
 }
 
 async function deleteTodo(id: string) {
   const db = await dbPromise;
-  await db.exec("DELETE FROM todos WHERE id = ?", [id]);
+
+  // Use delete builder
+  await db.delete("todos").where("id", "=", id).execute();
+
   db.notifyTable("todos");
-  await refresh();
 }
 
 function startEdit(todo: any) {
@@ -49,14 +55,27 @@ async function updateTodo(id: string) {
   if (!editingTitle.value.trim()) return;
 
   const db = await dbPromise;
-  await db.exec(
-    "UPDATE todos SET title = ? WHERE id = ?",
-    [editingTitle.value, id]
-  );
+
+  // Use update builder
+  await db.update("todos")
+    .where("id", "=", id)
+    .set({ title: editingTitle.value })
+    .execute();
+
   db.notifyTable("todos");
   editingId.value = null;
   editingTitle.value = "";
-  await refresh();
+}
+
+async function toggleComplete(id: string, completed: boolean) {
+  const db = await dbPromise;
+
+  await db.update("todos")
+    .where("id", "=", id)
+    .set({ completed: !completed })
+    .execute();
+
+  db.notifyTable("todos");
 }
 </script>
 
@@ -81,7 +100,7 @@ async function updateTodo(id: string) {
     <p v-if="loading">Loading...</p>
     <p v-if="error">{{ error.message }}</p>
 
-    <ul v-if="todos.length" class="space-y-2">
+    <ul v-if="todos && todos.length" class="space-y-2">
       <li
         v-for="t in todos"
         :key="t.id"
@@ -112,7 +131,15 @@ async function updateTodo(id: string) {
 
         <!-- View mode -->
         <template v-else>
-          <span class="flex-1">{{ t.title }}</span>
+          <input
+            type="checkbox"
+            :checked="t.completed"
+            @change="toggleComplete(t.id, t.completed)"
+            class="w-5 h-5"
+          />
+          <span class="flex-1" :class="{ 'line-through text-gray-400': t.completed }">
+            {{ t.title }}
+          </span>
           <button
             @click="startEdit(t)"
             class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
@@ -128,6 +155,6 @@ async function updateTodo(id: string) {
         </template>
       </li>
     </ul>
-    <p v-else class="text-gray-500">No todos yet.</p>
+    <p v-else-if="!loading" class="text-gray-500">No todos yet.</p>
   </main>
 </template>
