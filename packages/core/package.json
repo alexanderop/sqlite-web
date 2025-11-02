@@ -1,13 +1,46 @@
 {
   "name": "@alexop/sqlite-core",
   "version": "0.1.0",
+  "description": "Type-safe SQLite client for the browser using WASM and OPFS with Zod schema validation and query builder",
+  "author": "Alexander Opalic",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
+  "keywords": [
+    "sqlite",
+    "browser",
+    "wasm",
+    "opfs",
+    "database",
+    "sql",
+    "indexeddb",
+    "typescript",
+    "zod",
+    "query-builder",
+    "type-safe"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexanderopalic/sqlite-web.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/alexanderopalic/sqlite-web/issues"
+  },
+  "homepage": "https://github.com/alexanderopalic/sqlite-web#readme",
+  "sideEffects": false,
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "test": "vitest run",

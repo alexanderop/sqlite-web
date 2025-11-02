@@ -2,3 +2,8 @@ src
 tsup.config.ts
 tsconfig.json
 *.tsbuildinfo
+vitest.config.ts
+TYPE_SAFETY.md
+*.test.ts
+*.spec.ts
+__tests__

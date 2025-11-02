@@ -1,18 +1,51 @@
 {
   "name": "@alexop/sqlite-vue",
   "version": "0.1.0",
+  "description": "Vue 3 plugin and composables for @alexop/sqlite-core with reactive queries",
+  "author": "Alexander Opalic",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
+  "keywords": [
+    "vue",
+    "vue3",
+    "sqlite",
+    "browser",
+    "wasm",
+    "opfs",
+    "database",
+    "reactive",
+    "composables",
+    "typescript",
+    "type-safe"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexanderopalic/sqlite-web.git",
+    "directory": "packages/vue"
+  },
+  "bugs": {
+    "url": "https://github.com/alexanderopalic/sqlite-web/issues"
+  },
+  "homepage": "https://github.com/alexanderopalic/sqlite-web#readme",
+  "sideEffects": false,
   "peerDependencies": {
     "vue": "^3.4.0"
   },
   "dependencies": {
-    "@alexop/sqlite-core": "workspace:*"
+    "@alexop/sqlite-core": "^0.1.0"
   },
   "devDependencies": {
     "vue": "^3.4.0",

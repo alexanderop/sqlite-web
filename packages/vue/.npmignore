@@ -2,3 +2,7 @@ src
 tsup.config.ts
 tsconfig.json
 *.tsbuildinfo
+vitest.config.ts
+*.test.ts
+*.spec.ts
+__tests__
