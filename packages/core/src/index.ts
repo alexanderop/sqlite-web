@@ -88,7 +88,8 @@ export async function createSQLiteClient(opts: Options): Promise<SQLiteClient> {
       dbId,
       sql,
       bind: params,
-      returnValue: "resultRows"
+      returnValue: "resultRows",
+      rowMode: "object"
     });
 
     if (result.type === "error") {
