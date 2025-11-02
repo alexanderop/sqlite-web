@@ -1,0 +1,23 @@
+{
+  "name": "@alexop/sqlite-vue",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "peerDependencies": {
+    "vue": "^3.4.0"
+  },
+  "dependencies": {
+    "@alexop/sqlite-core": "workspace:*"
+  },
+  "devDependencies": {
+    "vue": "^3.4.0"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts"
+  }
+}
