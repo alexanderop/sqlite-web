@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useSQLiteQuery, useSQLiteClientAsync } from "@alexop/sqlite-vue";
+// Import typed composables from our local file for full type safety
+import { useSQLiteQuery, useSQLiteClientAsync } from "./composables/db";
 
 // Use query builder with type safety
 const { rows: todos, loading, error } = useSQLiteQuery(

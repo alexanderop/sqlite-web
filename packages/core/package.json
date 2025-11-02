@@ -9,7 +9,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts"
+    "build": "tsup src/index.ts --format esm --dts",
+    "test": "vitest run",
+    "test:type": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@sqlite.org/sqlite-wasm": "^3.50.4-build1",

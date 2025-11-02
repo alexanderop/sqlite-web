@@ -4,15 +4,28 @@
   "version": "0.0.0",
   "workspaces": [
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "docs"
   ],
   "scripts": {
     "build": "pnpm -r run build",
-    "dev:vue": "pnpm --filter vue-app dev"
+    "dev:vue": "pnpm --filter vue-app dev",
+    "dev:docs": "pnpm --filter docs dev",
+    "build:docs": "pnpm --filter docs build",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:vue-app": "pnpm --filter vue-app test"
   },
   "packageManager": "pnpm@10.18.3",
   "devDependencies": {
+    "@vitest/browser": "^4.0.6",
+    "@vitest/browser-playwright": "^4.0.6",
+    "@vitest/ui": "^4.0.6",
+    "playwright": "^1.56.1",
     "tsup": "^8.5.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.6",
+    "vitest-browser-vue": "^2.0.1"
   }
 }

@@ -15,9 +15,13 @@
     "@alexop/sqlite-core": "workspace:*"
   },
   "devDependencies": {
-    "vue": "^3.4.0"
+    "vue": "^3.4.0",
+    "zod": "^4.1.12"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts"
+    "build": "tsup src/index.ts --format esm --dts",
+    "test": "vitest run",
+    "test:type": "vitest run",
+    "test:watch": "vitest"
   }
 }

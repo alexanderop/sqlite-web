@@ -96,12 +96,45 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
     dbId = openResponse.result.dbId as string;
 
     if (opts.migrations?.length) {
+      // Create migrations tracking table
+      await promiser("exec", {
+        dbId,
+        sql: `
+          CREATE TABLE IF NOT EXISTS __migrations__ (
+            version INTEGER PRIMARY KEY,
+            applied_at TEXT DEFAULT CURRENT_TIMESTAMP
+          )
+        `,
+      });
+
+      // Get already applied migrations
+      const appliedResult = await promiser("exec", {
+        dbId,
+        sql: "SELECT version FROM __migrations__ ORDER BY version",
+        returnValue: "resultRows",
+        rowMode: "object",
+      });
+
+      const appliedVersions = new Set(
+        (appliedResult.result?.resultRows ?? []).map((row: any) => row.version)
+      );
+
+      // Run pending migrations in order
       const ordered = opts.migrations.sort((a, b) => a.version - b.version);
       for (const mig of ordered) {
-        await promiser("exec", {
-          dbId,
-          sql: mig.sql,
-        });
+        if (!appliedVersions.has(mig.version)) {
+          await promiser("exec", {
+            dbId,
+            sql: mig.sql,
+          });
+
+          // Record migration as applied
+          await promiser("exec", {
+            dbId,
+            sql: "INSERT INTO __migrations__ (version) VALUES (?)",
+            bind: [mig.version],
+          });
+        }
       }
     }
   }
