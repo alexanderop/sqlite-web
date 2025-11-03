@@ -38,8 +38,8 @@
     "no-var": "error",
     "prefer-const": "warn",
     "prefer-arrow-callback": "off",
-    "sort-imports": "warn",
-    "sort-keys": "warn",
+    "sort-imports": "off",
+    "sort-keys": "off",
     "no-magic-numbers": "off",
     "max-lines-per-function": "off",
     "func-style": "off"

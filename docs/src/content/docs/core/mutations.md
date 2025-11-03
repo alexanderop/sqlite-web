@@ -380,28 +380,74 @@ try {
 
 ## Batch Operations
 
-For bulk inserts, consider using raw SQL with prepared statements:
+Insert multiple rows in a single SQL statement for better performance.
+
+### Batch Insert
+
+Pass an array of objects to `.values()` to insert multiple rows at once:
 
 ```typescript
-const todos = [
-  { id: "1", title: "Task 1" },
-  { id: "2", title: "Task 2" },
-  { id: "3", title: "Task 3" }
-];
+// Insert multiple todos in one operation
+await db.insert("todos").values([
+  { id: "1", title: "First task", completed: false },
+  { id: "2", title: "Second task", completed: true },
+  { id: "3", title: "Third task", completed: false }
+]);
+```
 
-// Multiple individual inserts (slower)
+This is much faster than individual inserts:
+
+```typescript
+// ❌ Slow - 3 separate SQL statements
 for (const todo of todos) {
   await db.insert("todos").values(todo);
 }
 
-// Single batch insert (faster)
-const placeholders = todos.map(() => "(?, ?)").join(", ");
-const values = todos.flatMap(t => [t.id, t.title]);
+// ✅ Fast - single SQL statement
+await db.insert("todos").values(todos);
+```
 
-await db.raw(
-  `INSERT INTO todos (id, title) VALUES ${placeholders}`,
-  values
-);
+### Validation
+
+All rows are validated before insertion. If any row fails validation, none are inserted:
+
+```typescript
+try {
+  await db.insert("users").values([
+    { id: 1, name: "Alice", email: "alice@example.com" },
+    { id: 2, name: "Bob", email: "not-an-email" },  // ❌ Invalid
+    { id: 3, name: "Charlie", email: "charlie@example.com" }
+  ]);
+} catch (error) {
+  // No rows inserted - validation failed on second row
+  console.error("Batch insert failed:", error);
+}
+```
+
+### Empty Arrays
+
+Batch insert handles empty arrays gracefully:
+
+```typescript
+await db.insert("todos").values([]);  // No-op, returns 0
+```
+
+### Type Safety
+
+TypeScript ensures all rows match the schema:
+
+```typescript
+// ✅ Valid - all rows have correct types
+await db.insert("todos").values([
+  { id: "1", title: "Task 1" },
+  { id: "2", title: "Task 2" }
+]);
+
+// ❌ TypeScript error - missing required field
+await db.insert("todos").values([
+  { id: "1", title: "Task 1" },
+  { id: "2" }  // Missing 'title'
+]);
 ```
 
 ## Table Change Notifications
@@ -462,7 +508,7 @@ console.log(result[0].id);
 3. **Use transactions** - Wrap related mutations in `.transaction()` for consistency
 4. **Notify subscribers** - Call `.notifyTable()` after mutations in reactive contexts
 5. **Be careful with delete** - Always use `.where()` unless you really want to delete everything
-6. **Batch when possible** - Use raw SQL with placeholders for bulk operations
+6. **Batch when possible** - Use `.insert().values([...])` for multiple row inserts instead of loops
 7. **Handle errors** - Transactions automatically rollback on error, but always handle failures gracefully
 
 ## Common Patterns

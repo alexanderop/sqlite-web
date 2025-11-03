@@ -12,13 +12,21 @@ export class InsertBuilder<TRow> {
   ) {}
 
   /**
-   * Insert a row with validation
+   * Insert a row or multiple rows with validation
    * Returns the last inserted row ID
    */
-  async values(data: Partial<TRow>): Promise<number> {
-    // Validate with Zod - use partial to allow optional fields
-    const validated = this.schema.partial().parse(data);
+  async values(data: Partial<TRow> | Partial<TRow>[]): Promise<number> {
+    if (Array.isArray(data)) {
+      return this.batchInsert(data);
+    }
+    return this.singleInsert(data);
+  }
 
+  /**
+   * Insert a single row
+   */
+  private async singleInsert(data: Partial<TRow>): Promise<number> {
+    const validated = this.schema.partial().parse(data);
     const keys = Object.keys(validated);
     const values = Object.values(validated);
     const placeholders = keys.map(() => "?").join(", ");
@@ -26,7 +34,37 @@ export class InsertBuilder<TRow> {
     const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES (${placeholders})`;
     await this.executeQuery(sql, values);
 
-    // Get last insert row ID
+    return this.getLastInsertId();
+  }
+
+  /**
+   * Insert multiple rows in a single SQL statement
+   */
+  private async batchInsert(data: Partial<TRow>[]): Promise<number> {
+    if (data.length === 0) {
+      return 0;
+    }
+
+    // Validate all rows before executing
+    const validatedRows = data.map((row) => this.schema.partial().parse(row));
+
+    // Build multi-row INSERT statement
+    const keys = Object.keys(validatedRows[0]);
+    const placeholders = keys.map(() => "?").join(", ");
+    const valuesClauses = validatedRows.map(() => `(${placeholders})`).join(", ");
+
+    const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES ${valuesClauses}`;
+    const allValues = validatedRows.flatMap((row) => Object.values(row));
+
+    await this.executeQuery(sql, allValues);
+
+    return this.getLastInsertId();
+  }
+
+  /**
+   * Get the last inserted row ID
+   */
+  private async getLastInsertId(): Promise<number> {
     const result = await this.executeQuery(
       "SELECT last_insert_rowid() as id",
       []

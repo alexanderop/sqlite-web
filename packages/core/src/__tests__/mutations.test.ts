@@ -239,4 +239,66 @@ describe("Mutations", () => {
     result = await db.query("todos").all();
     expect(result).toHaveLength(0);
   });
+
+  it("should batch insert multiple rows", async () => {
+    const db = await createSQLiteClient({
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
+        {
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
+        },
+      ], schema: testSchema,
+    });
+
+    await db.insert("todos").values([
+      { id: "1", title: "First task", completed: false },
+      { id: "2", title: "Second task", completed: true },
+      { id: "3", title: "Third task", completed: false },
+    ]);
+
+    const result = await db.query("todos").all();
+    expect(result).toHaveLength(3);
+    expect(result[0].title).toBe("First task");
+    expect(result[1].title).toBe("Second task");
+    expect(result[2].title).toBe("Third task");
+  });
+
+  it("should reject batch insert when one row fails validation", async () => {
+    const db = await createSQLiteClient({
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
+        {
+          sql: `CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, age INTEGER)`, version: 1,
+        },
+      ], schema: testSchema,
+    });
+
+    // Second user has invalid email
+    await expect(
+      db.insert("users").values([
+        { id: 1, name: "Alice", email: "alice@example.com" },
+        { id: 2, name: "Bob", email: "not-an-email" },
+        { id: 3, name: "Charlie", email: "charlie@example.com" },
+      ])
+    ).rejects.toThrow("Invalid email");
+
+    // No rows should be inserted (transaction should roll back)
+    const result = await db.query("users").all();
+    expect(result).toHaveLength(0);
+  });
+
+  it("should handle empty array batch insert", async () => {
+    const db = await createSQLiteClient({
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
+        {
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
+        },
+      ], schema: testSchema,
+    });
+
+    const rowId = await db.insert("todos").values([]);
+
+    expect(rowId).toBe(0);
+
+    const result = await db.query("todos").all();
+    expect(result).toHaveLength(0);
+  });
 });

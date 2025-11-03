@@ -285,10 +285,13 @@ describe("InsertBuilder - Type Safety", () => {
     // Invalid fields are caught by the @ts-expect-error tests in other test cases
 
     type TodoInsertParam = Parameters<ReturnType<TestDB["insert"]>["values"]>[0];
-    type ValidFields = keyof TodoInsertParam;
+    // Extract single object type from union (Partial<TRow> | Partial<TRow>[])
+    type SingleInsert = Exclude<TodoInsertParam, unknown[]>;
+    type ValidFields = keyof SingleInsert;
 
-    // Verify expected fields exist
-    expectTypeOf<ValidFields>().toExtend<"id" | "title" | "completed" | "createdAt">();
+    // Verify expected fields exist (fields can be present in the type)
+    type _ = ValidFields extends "id" | "title" | "completed" | "createdAt" | "priority" ? true : false;
+    expectTypeOf<_>().toEqualTypeOf<true>();
   });
 });
 
