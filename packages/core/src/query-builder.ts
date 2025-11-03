@@ -160,7 +160,9 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
     }
 
     const fieldName = String(field);
-    this.addWhereCondition(fieldName, operator!, value, 'AND');
+    if (operator) {
+      this.addWhereCondition(fieldName, operator, value, 'AND');
+    }
     return this;
   }
 

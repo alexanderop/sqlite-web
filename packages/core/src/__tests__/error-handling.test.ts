@@ -58,30 +58,38 @@ describe("Error Handling", () => {
 
   describe("ValidationError", () => {
     it("should throw ValidationError on schema validation failure", async () => {
-      try {
-        await db.insert("users").values({
+      let error: ValidationError | undefined;
+
+      await expect(
+        db.insert("users").values({
           name: "ab", // Too short (min 3)
           email: "invalid-email", // Not a valid email
           age: 200, // Too large (max 150)
-        });
-        expect.fail("Should have thrown ValidationError");
-      } catch (e) {
-        expect(e).toBeInstanceOf(ValidationError);
-        expect(e).toBeInstanceOf(SQLiteError);
+        })
+      ).rejects.toThrow(ValidationError);
 
-        const error = e as ValidationError;
-        expect(error.message).toMatch(/validation/i);
-        expect(error.code).toBe("VALIDATION_ERROR");
-        expect(error.field).toBeDefined();
-        expect(error.issues).toBeInstanceOf(Array);
-        expect(error.issues.length).toBeGreaterThan(0);
+      // Capture error to test properties
+      await db.insert("users").values({
+        name: "ab",
+        email: "invalid-email",
+        age: 200,
+      }).catch((e) => {
+        error = e as ValidationError;
+      });
 
-        // Check that issues contain field paths
-        const paths = error.issues.map((issue) => issue.path.join("."));
-        expect(paths).toContain("name");
-        expect(paths).toContain("email");
-        expect(paths).toContain("age");
-      }
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(error).toBeInstanceOf(SQLiteError);
+      expect(error?.message).toMatch(/validation/i);
+      expect(error?.code).toBe("VALIDATION_ERROR");
+      expect(error?.field).toBeDefined();
+      expect(error?.issues).toBeInstanceOf(Array);
+      expect(error?.issues.length).toBeGreaterThan(0);
+
+      // Check that issues contain field paths
+      const paths = error?.issues.map((issue) => issue.path.join(".")) ?? [];
+      expect(paths).toContain("name");
+      expect(paths).toContain("email");
+      expect(paths).toContain("age");
     });
 
     it("should throw ValidationError on update with invalid data", async () => {
@@ -91,21 +99,30 @@ describe("Error Handling", () => {
         age: 30,
       });
 
-      try {
-        await db.update("users")
+      let error: ValidationError | undefined;
+
+      await expect(
+        db.update("users")
           .where("name", "=", "John Doe")
           .set({
             email: "not-an-email", // Invalid email
           })
-          .execute();
-        expect.fail("Should have thrown ValidationError");
-      } catch (e) {
-        expect(e).toBeInstanceOf(ValidationError);
+          .execute()
+      ).rejects.toThrow(ValidationError);
 
-        const error = e as ValidationError;
-        expect(error.code).toBe("VALIDATION_ERROR");
-        expect(error.issues.length).toBeGreaterThan(0);
-      }
+      // Capture error to test properties
+      await db.update("users")
+        .where("name", "=", "John Doe")
+        .set({
+          email: "not-an-email",
+        })
+        .execute().catch((e) => {
+          error = e as ValidationError;
+        });
+
+      expect(error).toBeInstanceOf(ValidationError);
+      expect(error?.code).toBe("VALIDATION_ERROR");
+      expect(error?.issues.length).toBeGreaterThan(0);
     });
   });
 
@@ -117,107 +134,149 @@ describe("Error Handling", () => {
         age: 30,
       });
 
-      try {
-        await db.insert("users").values({
+      let error: ConstraintError | undefined;
+
+      await expect(
+        db.insert("users").values({
           name: "Jane Doe",
           email: "john@example.com", // Duplicate email
           age: 25,
-        });
-        expect.fail("Should have thrown ConstraintError");
-      } catch (e) {
-        expect(e).toBeInstanceOf(ConstraintError);
-        expect(e).toBeInstanceOf(SQLiteError);
+        })
+      ).rejects.toThrow(ConstraintError);
 
-        const error = e as ConstraintError;
-        expect(error.code).toBe("CONSTRAINT_ERROR");
-        expect(error.constraint).toContain("UNIQUE");
-        expect(error.message).toContain("email");
-      }
+      // Capture error to test properties
+      await db.insert("users").values({
+        name: "Jane Doe",
+        email: "john@example.com",
+        age: 25,
+      }).catch((e) => {
+        error = e as ConstraintError;
+      });
+
+      expect(error).toBeInstanceOf(ConstraintError);
+      expect(error).toBeInstanceOf(SQLiteError);
+      expect(error?.code).toBe("CONSTRAINT_ERROR");
+      expect(error?.constraint).toContain("UNIQUE");
+      expect(error?.message).toContain("email");
     });
 
     it("should throw ConstraintError on FOREIGN KEY violation", async () => {
-      try {
-        await db.insert("posts").values({
+      let error: ConstraintError | undefined;
+
+      await expect(
+        db.insert("posts").values({
           userId: 999, // Non-existent user
           title: "Test Post",
           content: "Content",
-        });
-        expect.fail("Should have thrown ConstraintError");
-      } catch (e) {
-        expect(e).toBeInstanceOf(ConstraintError);
+        })
+      ).rejects.toThrow(ConstraintError);
 
-        const error = e as ConstraintError;
-        expect(error.code).toBe("CONSTRAINT_ERROR");
-        expect(error.constraint).toContain("FOREIGN KEY");
-      }
+      // Capture error to test properties
+      await db.insert("posts").values({
+        userId: 999,
+        title: "Test Post",
+        content: "Content",
+      }).catch((e) => {
+        error = e as ConstraintError;
+      });
+
+      expect(error).toBeInstanceOf(ConstraintError);
+      expect(error?.code).toBe("CONSTRAINT_ERROR");
+      expect(error?.constraint).toContain("FOREIGN KEY");
     });
 
     it("should throw ConstraintError on NOT NULL violation", async () => {
-      try {
-        await db.exec(`INSERT INTO users (name, email) VALUES ('John', 'john@example.com')`);
-        expect.fail("Should have thrown ConstraintError");
-      } catch (e) {
-        expect(e).toBeInstanceOf(ConstraintError);
+      let error: ConstraintError | undefined;
 
-        const error = e as ConstraintError;
-        expect(error.code).toBe("CONSTRAINT_ERROR");
-        expect(error.constraint).toContain("NOT NULL");
-      }
+      await expect(
+        db.exec(`INSERT INTO users (name, email) VALUES ('John', 'john@example.com')`)
+      ).rejects.toThrow(ConstraintError);
+
+      // Capture error to test properties
+      await db.exec(`INSERT INTO users (name, email) VALUES ('John', 'john@example.com')`).catch((e) => {
+        error = e as ConstraintError;
+      });
+
+      expect(error).toBeInstanceOf(ConstraintError);
+      expect(error?.code).toBe("CONSTRAINT_ERROR");
+      expect(error?.constraint).toContain("NOT NULL");
     });
   });
 
   describe("SQLiteError", () => {
     it("should throw SQLiteError on SQL syntax error", async () => {
-      try {
-        await db.exec("INVALID SQL SYNTAX");
-        expect.fail("Should have thrown SQLiteError");
-      } catch (e) {
-        expect(e).toBeInstanceOf(SQLiteError);
+      let error: SQLiteError | undefined;
 
-        const error = e as SQLiteError;
-        expect(error.code).toBe("SQL_ERROR");
-        expect(error.sql).toBe("INVALID SQL SYNTAX");
-        expect(error.message).toContain("syntax");
-      }
+      await expect(
+        db.exec("INVALID SQL SYNTAX")
+      ).rejects.toThrow(SQLiteError);
+
+      // Capture error to test properties
+      await db.exec("INVALID SQL SYNTAX").catch((e) => {
+        error = e as SQLiteError;
+      });
+
+      expect(error).toBeInstanceOf(SQLiteError);
+      expect(error?.code).toBe("SQL_ERROR");
+      expect(error?.sql).toBe("INVALID SQL SYNTAX");
+      expect(error?.message).toContain("syntax");
     });
 
     it("should throw SQLiteError on non-existent table", async () => {
-      try {
-        await db.exec("SELECT * FROM non_existent_table");
-        expect.fail("Should have thrown SQLiteError");
-      } catch (e) {
-        expect(e).toBeInstanceOf(SQLiteError);
+      let error: SQLiteError | undefined;
 
-        const error = e as SQLiteError;
-        expect(error.code).toBe("SQL_ERROR");
-        expect(error.sql).toContain("non_existent_table");
-      }
+      await expect(
+        db.exec("SELECT * FROM non_existent_table")
+      ).rejects.toThrow(SQLiteError);
+
+      // Capture error to test properties
+      await db.exec("SELECT * FROM non_existent_table").catch((e) => {
+        error = e as SQLiteError;
+      });
+
+      expect(error).toBeInstanceOf(SQLiteError);
+      expect(error?.code).toBe("SQL_ERROR");
+      expect(error?.sql).toContain("non_existent_table");
     });
   });
 
   describe("Error properties", () => {
     it("should include SQL in error for exec()", async () => {
-      try {
-        await db.exec("SELECT * FROM invalid_table");
-        expect.fail("Should have thrown");
-      } catch (e) {
-        const error = e as SQLiteError;
-        expect(error.sql).toBe("SELECT * FROM invalid_table");
-      }
+      let error: SQLiteError | undefined;
+
+      await expect(
+        db.exec("SELECT * FROM invalid_table")
+      ).rejects.toThrow(SQLiteError);
+
+      // Capture error to test properties
+      await db.exec("SELECT * FROM invalid_table").catch((e) => {
+        error = e as SQLiteError;
+      });
+
+      expect(error?.sql).toBe("SELECT * FROM invalid_table");
     });
 
     it("should include helpful error messages", async () => {
-      try {
-        await db.insert("users").values({
+      let error: ValidationError | undefined;
+
+      await expect(
+        db.insert("users").values({
           name: "Jo", // Too short
           email: "joe@example.com",
           age: 30,
-        });
-        expect.fail("Should have thrown");
-      } catch (e) {
-        const error = e as ValidationError;
-        expect(error.message).toMatch(/validation|failed|invalid/i);
-      }
+        })
+      ).rejects.toThrow(ValidationError);
+
+      // Capture error to test properties
+      await db.insert("users").values({
+        name: "Jo",
+        email: "joe@example.com",
+        age: 30,
+      }).catch((e) => {
+        error = e as ValidationError;
+      });
+
+      expect(error?.message).toMatch(/validation|failed|invalid/i);
     });
   });
 });

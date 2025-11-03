@@ -517,16 +517,17 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
       });
 
       // Check for errors in the result (in case promiser resolves with error)
-      if (result.type === "error" || (result.result as any)?.errorClass) {
+      if (result.type === "error" || (result.result as unknown as { errorClass?: string })?.errorClass) {
         const message = result.result?.message || "Query failed";
         throw parseSQLiteError(message, sql);
       }
 
       return result;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Promiser rejected - check if it's an error object from SQLite
-      if (error?.type === "error" || error?.result?.errorClass) {
-        const message = error.result?.message || "Query failed";
+      const err = error as { type?: string; result?: { errorClass?: string; message?: string } };
+      if (err?.type === "error" || err?.result?.errorClass) {
+        const message = err.result?.message || "Query failed";
         throw parseSQLiteError(message, sql);
       }
       // Re-throw if it's a different kind of error
