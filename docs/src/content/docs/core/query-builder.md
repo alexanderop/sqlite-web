@@ -43,10 +43,114 @@ const recentTodos = await db.query("todos")
 | `<=` | `.where("price", "<=", 100)` | Less than or equal |
 | `LIKE` | `.where("name", "LIKE", "%John%")` | Pattern matching |
 | `IN` | `.where("status", "IN", ["active", "pending"])` | Value in list |
+| `NOT IN` | `.where("status", "NOT IN", ["deleted", "spam"])` | Value not in list |
+| `IS NULL` | `.where("deletedAt", "IS NULL", null)` | Check for NULL values |
+| `IS NOT NULL` | `.where("deletedAt", "IS NOT NULL", null)` | Check for non-NULL values |
+| `BETWEEN` | `.where("age", "BETWEEN", [18, 65])` | Value in range (inclusive) |
 
 :::tip
-The `IN` operator accepts an array of values and generates `WHERE column IN (?, ?, ...)` SQL.
+The `IN` and `NOT IN` operators accept an array of values and generate `WHERE column IN (?, ?, ...)` SQL.
 :::
+
+### OR Conditions
+
+By default, multiple `.where()` calls are combined with `AND`. Use `.orWhere()` to combine conditions with `OR`:
+
+```typescript
+// Get completed OR high priority todos
+const todos = await db.query("todos")
+  .where("completed", "=", true)
+  .orWhere("priority", "=", "high")
+  .all();
+// SQL: WHERE completed = 1 OR priority = 'high'
+
+// Mix AND and OR - conditions are evaluated left to right
+const todos = await db.query("todos")
+  .where("userId", "=", "user1")
+  .where("completed", "=", false)
+  .orWhere("priority", "=", "urgent")
+  .all();
+// SQL: WHERE userId = 'user1' AND completed = 0 OR priority = 'urgent'
+```
+
+### Advanced WHERE Conditions
+
+#### NOT IN Operator
+
+Exclude multiple values:
+
+```typescript
+// Get todos that are neither deleted nor spam
+const todos = await db.query("todos")
+  .where("status", "NOT IN", ["deleted", "spam"])
+  .all();
+```
+
+#### NULL Checks
+
+Check for NULL or non-NULL values:
+
+```typescript
+// Get active todos (not deleted)
+const activeTodos = await db.query("todos")
+  .where("deletedAt", "IS NULL", null)
+  .all();
+
+// Get deleted todos
+const deletedTodos = await db.query("todos")
+  .where("deletedAt", "IS NOT NULL", null)
+  .all();
+```
+
+#### BETWEEN Operator
+
+Filter values within a range:
+
+```typescript
+// Get users between 18 and 65 years old
+const adults = await db.query("users")
+  .where("age", "BETWEEN", [18, 65])
+  .all();
+
+// Get orders from date range
+const orders = await db.query("orders")
+  .where("createdAt", "BETWEEN", ["2024-01-01", "2024-12-31"])
+  .all();
+```
+
+:::note
+The `BETWEEN` operator is inclusive - it includes both boundary values.
+:::
+
+### Complex AND/OR Grouping
+
+Use callback functions to create grouped conditions with parentheses:
+
+```typescript
+// Get todos that are (completed OR high priority) AND belong to user1
+const todos = await db.query("todos")
+  .where((qb) =>
+    qb.where("completed", "=", true)
+      .orWhere("priority", "=", "high")
+  )
+  .where("userId", "=", "user1")
+  .all();
+// SQL: WHERE (completed = 1 OR priority = 'high') AND userId = 'user1'
+
+// Complex nested conditions
+const results = await db.query("todos")
+  .where((qb) =>
+    qb.where("status", "=", "pending")
+      .orWhere("status", "=", "in-progress")
+  )
+  .where("assignedTo", "=", currentUserId)
+  .where("dueDate", "<", tomorrow)
+  .all();
+// SQL: WHERE (status = 'pending' OR status = 'in-progress')
+//      AND assignedTo = 'user1' AND dueDate < '2024-01-01'
+```
+
+This pattern is useful for implementing "filters" where you want to match any of several conditions, then combine with other required conditions.
 
 ## Selecting Columns
 
@@ -251,8 +355,10 @@ Build queries dynamically:
 ```typescript
 function searchTodos(filters: {
   completed?: boolean;
-  priority?: string;
+  priorities?: string[];
+  excludeStatuses?: string[];
   search?: string;
+  includeDeleted?: boolean;
 }) {
   let query = db.query("todos");
 
@@ -260,12 +366,20 @@ function searchTodos(filters: {
     query = query.where("completed", "=", filters.completed);
   }
 
-  if (filters.priority) {
-    query = query.where("priority", "=", filters.priority);
+  if (filters.priorities && filters.priorities.length > 0) {
+    query = query.where("priority", "IN", filters.priorities);
+  }
+
+  if (filters.excludeStatuses && filters.excludeStatuses.length > 0) {
+    query = query.where("status", "NOT IN", filters.excludeStatuses);
   }
 
   if (filters.search) {
     query = query.where("title", "LIKE", `%${filters.search}%`);
+  }
+
+  if (!filters.includeDeleted) {
+    query = query.where("deletedAt", "IS NULL", null);
   }
 
   return query.all();
@@ -274,8 +388,10 @@ function searchTodos(filters: {
 // Use it
 const results = await searchTodos({
   completed: false,
-  priority: "high",
-  search: "urgent"
+  priorities: ["high", "urgent"],
+  excludeStatuses: ["spam", "archived"],
+  search: "bug",
+  includeDeleted: false
 });
 ```
 

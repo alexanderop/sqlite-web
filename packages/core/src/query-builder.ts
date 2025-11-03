@@ -37,6 +37,7 @@ import type { QueryResult, SQLOperator, SortDirection } from "./types";
 export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undefined> {
   private whereClauses: string[] = [];
   private whereParams: unknown[] = [];
+  private whereConjunctions: ('AND' | 'OR')[] = [];
   private selectedFields: string[] | undefined;
   private orderByClause: string | undefined;
   private limitCount: number | undefined;
@@ -87,23 +88,114 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
    *   .where('status', '=', 'active')
    * ```
    */
-  where<K extends keyof TRow>(
-    field: K,
+  /**
+   * Internal method to add a WHERE condition with specified conjunction
+   * @internal
+   */
+  private addWhereCondition(
+    field: string,
     operator: SQLOperator,
-    value: TRow[K] | TRow[K][]
-  ): this {
-    const fieldName = String(field);
-
+    value: unknown,
+    conjunction: 'AND' | 'OR'
+  ): void {
     if (operator === 'IN' || operator === 'NOT IN') {
       const values = Array.isArray(value) ? value : [value];
       const placeholders = values.map(() => '?').join(', ');
-      this.whereClauses.push(`${fieldName} ${operator} (${placeholders})`);
+      if (this.whereClauses.length > 0) {
+        this.whereConjunctions.push(conjunction);
+      }
+      this.whereClauses.push(`${field} ${operator} (${placeholders})`);
       this.whereParams.push(...values);
+    } else if (operator === 'IS NULL' || operator === 'IS NOT NULL') {
+      if (this.whereClauses.length > 0) {
+        this.whereConjunctions.push(conjunction);
+      }
+      this.whereClauses.push(`${field} ${operator}`);
+      // No parameter needed for IS NULL / IS NOT NULL
+    } else if (operator === 'BETWEEN') {
+      const values = Array.isArray(value) ? value : [];
+      if (values.length !== 2) {
+        throw new Error('BETWEEN operator requires an array of exactly 2 values');
+      }
+      if (this.whereClauses.length > 0) {
+        this.whereConjunctions.push(conjunction);
+      }
+      this.whereClauses.push(`${field} ${operator} ? AND ?`);
+      this.whereParams.push(values[0], values[1]);
     } else {
-      this.whereClauses.push(`${fieldName} ${operator} ?`);
+      if (this.whereClauses.length > 0) {
+        this.whereConjunctions.push(conjunction);
+      }
+      this.whereClauses.push(`${field} ${operator} ?`);
       this.whereParams.push(value);
     }
+  }
 
+  where<K extends keyof TRow>(
+    field: K | ((qb: QueryBuilder<TRow, TSelected>) => QueryBuilder<TRow, TSelected>),
+    operator?: SQLOperator,
+    value?: TRow[K] | TRow[K][] | null
+  ): this {
+    // Handle callback for grouped conditions
+    if (typeof field === 'function') {
+      const subBuilder = new QueryBuilder<TRow, TSelected>(
+        this.executeQuery,
+        this.tableName,
+        this.schema
+      );
+      field(subBuilder);
+
+      if (subBuilder.whereClauses.length > 0) {
+        const groupedCondition = subBuilder.buildWhereClause();
+        if (this.whereClauses.length > 0) {
+          this.whereConjunctions.push('AND');
+        }
+        this.whereClauses.push(`(${groupedCondition})`);
+        this.whereParams.push(...subBuilder.whereParams);
+      }
+
+      return this;
+    }
+
+    const fieldName = String(field);
+    this.addWhereCondition(fieldName, operator!, value, 'AND');
+    return this;
+  }
+
+  /**
+   * Add an OR WHERE condition to filter results
+   *
+   * Used to combine conditions with OR logic instead of AND. Must be called after
+   * an initial where() call.
+   *
+   * @template K - Field name from the table schema
+   * @param field - Column name to filter on (type-safe)
+   * @param operator - SQL comparison operator
+   * @param value - Value to compare against (or array for IN/NOT IN)
+   * @returns This QueryBuilder instance for chaining
+   *
+   * @example
+   * ```typescript
+   * // Get completed OR high priority tasks
+   * db.query('todos')
+   *   .where('completed', '=', true)
+   *   .orWhere('priority', '=', 'high')
+   *
+   * // Combine with AND
+   * db.query('todos')
+   *   .where('userId', '=', 'user1')
+   *   .where('completed', '=', false)
+   *   .orWhere('priority', '=', 'urgent')
+   * // This creates: WHERE userId = 'user1' AND (completed = false OR priority = 'urgent')
+   * ```
+   */
+  orWhere<K extends keyof TRow>(
+    field: K,
+    operator: SQLOperator,
+    value: TRow[K] | TRow[K][] | null
+  ): this {
+    const fieldName = String(field);
+    this.addWhereCondition(fieldName, operator, value, 'OR');
     return this;
   }
 
@@ -222,6 +314,25 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
   }
 
   /**
+   * Build the WHERE clause string using stored conjunctions
+   * @returns WHERE clause string without the "WHERE" keyword
+   * @internal
+   */
+  private buildWhereClause(): string {
+    if (this.whereClauses.length === 0) {
+      return '';
+    }
+
+    let result = this.whereClauses[0];
+    for (let i = 1; i < this.whereClauses.length; i++) {
+      const conjunction = this.whereConjunctions[i - 1] || 'AND';
+      result += ` ${conjunction} ${this.whereClauses[i]}`;
+    }
+
+    return result;
+  }
+
+  /**
    * Build the final SQL query string and parameters
    * @returns Object with SQL string and bind parameters
    * @internal
@@ -231,7 +342,7 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
     let sql = `SELECT ${fields} FROM ${this.tableName}`;
 
     if (this.whereClauses.length > 0) {
-      sql += ` WHERE ${this.whereClauses.join(" AND ")}`;
+      sql += ` WHERE ${this.buildWhereClause()}`;
     }
 
     if (this.orderByClause) {
@@ -345,7 +456,7 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
     let sql = `SELECT COUNT(*) as count FROM ${this.tableName}`;
 
     if (this.whereClauses.length > 0) {
-      sql += ` WHERE ${this.whereClauses.join(" AND ")}`;
+      sql += ` WHERE ${this.buildWhereClause()}`;
     }
 
     const results = await this.executeQuery(sql, this.whereParams) as Array<{ count: number }>;

@@ -41,7 +41,7 @@ export type QueryResult<
 /**
  * SQL comparison operators
  */
-export type SQLOperator = '=' | '>' | '<' | '>=' | '<=' | '!=' | 'LIKE' | 'IN' | 'NOT IN';
+export type SQLOperator = '=' | '>' | '<' | '>=' | '<=' | '!=' | 'LIKE' | 'IN' | 'NOT IN' | 'IS NULL' | 'IS NOT NULL' | 'BETWEEN';
 
 /**
  * Sort direction
