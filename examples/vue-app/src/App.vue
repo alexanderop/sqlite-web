@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
-// Import typed composables from our local file for full type safety
 import { useSQLiteQuery, useSQLiteClientAsync } from "./composables/db";
 
-// Use query builder with type safety
 const { rows: todos, loading, error } = useSQLiteQuery(
   (db) => db.query("todos").orderBy("createdAt", "DESC").all(),
   { tables: ["todos"] }

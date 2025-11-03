@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Development Workflow
+
+**Always use Test-Driven Development (TDD) as Kent Beck describes in "Test Driven Development: By Example":**
+
+1. **Red** - Write failing tests first (`packages/core/src/__tests__/*.test.ts`)
+2. **Green** - Implement minimal code to make tests pass
+3. **Refactor** - Clean up implementation while keeping tests green
+4. **Document** - Update Astro docs (`docs/src/content/docs/**/*.md`) with examples and API details
+
+**Test Writing Guidelines:**
+- Focus on the **main happy path** - test the primary use case first
+- Add **critical error cases** only (validation failures, constraint violations)
+- Avoid exhaustive edge case testing - trust the implementation for minor variations
+- Keep test suites small and maintainable (~5-10 tests per feature)
+- Example: For transactions, test basic commit/rollback, not every possible error combination
+
+**Documentation Rules:**
+- Keep CLAUDE.md minimal - only essential context for development
+- All feature documentation, examples, and usage patterns go in Astro docs
+- After implementing a feature, always update relevant docs pages
+
 ## Project Overview
 
 SQLite Web is a browser-based SQLite library using WASM and OPFS (Origin Private File System) for persistent storage. It provides a **type-safe TypeScript API** with **Zod schema validation** and a **query builder pattern** inspired by Nuxt Content's queryCollection API. Includes Vue 3 integration through composables and plugins.
@@ -114,165 +135,38 @@ optimizeDeps: {
 }
 ```
 
-## Publishing
+## Testing
 
-Packages are published to npm with public access:
+Run tests for packages:
 
 ```bash
-# Must build first
+# Core package tests
+pnpm --filter @alexop/sqlite-core test
+
+# Vue package tests
+pnpm --filter @alexop/sqlite-vue test
+
+# Run all tests
+pnpm -r test
+```
+
+## Publishing
+
+```bash
+# Build first
 pnpm -r run build
 
-# Publish core (independent)
-cd packages/core
-npm publish --access public
-
-# Publish vue (after core is published, since it depends on core)
-cd packages/vue
-npm publish --access public
+# Publish packages
+cd packages/core && npm publish --access public
+cd packages/vue && npm publish --access public
 ```
 
-## Common Patterns
+## Key Implementation Notes
 
-### 1. Define Schema with Zod
+- **Type Safety**: Schema registry maps table names to Zod schemas for compile-time safety
+- **Worker Communication**: Uses `sqlite3Worker1Promiser` for async SQLite operations
+- **Vue Pattern**: `useSQLiteClientAsync()` must be called during component setup (uses `inject()`)
+- **Pub/Sub**: `notifyTable()` triggers reactive updates in Vue components
+- **Transactions**: Automatic commit/rollback with `.transaction()` or manual with `.beginTransaction()`
 
-```typescript
-import { z } from "zod";
-
-const todoSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  completed: z.boolean().default(false),
-  createdAt: z.string().default(() => new Date().toISOString()),
-});
-
-const dbSchema = {
-  todos: todoSchema,
-  users: userSchema,
-} as const;
-```
-
-### 2. Create Type-Safe Client
-
-```typescript
-import { createSQLiteClient } from "@alexop/sqlite-core";
-
-const db = await createSQLiteClient({
-  schema: dbSchema,
-  filename: "file:app.sqlite3?vfs=opfs",
-  migrations: [
-    {
-      version: 1,
-      sql: `CREATE TABLE todos (
-        id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        completed INTEGER DEFAULT 0,
-        createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-      )`
-    }
-  ]
-});
-```
-
-### 3. Query with Type Safety
-
-```typescript
-// Full type safety - autocomplete for tables, columns, and values
-const todos = await db.query("todos")
-  .where("completed", "=", false)
-  .orderBy("createdAt", "DESC")
-  .limit(10)
-  .all();
-// Type: Array<{ id: string, title: string, completed: boolean, createdAt: string }>
-
-// Select specific fields (type narrows automatically)
-const titles = await db.query("todos")
-  .select("id", "title")
-  .where("completed", "=", true)
-  .all();
-// Type: Array<{ id: string, title: string }>
-
-// Get single result
-const todo = await db.query("todos")
-  .where("id", "=", "123")
-  .first();
-// Type: { ... } | null
-
-// Count
-const count = await db.query("todos")
-  .where("completed", "=", false)
-  .count();
-// Type: number
-```
-
-### 4. Mutations with Validation
-
-```typescript
-// Insert - validates against schema
-await db.insert("todos").values({
-  id: crypto.randomUUID(),
-  title: "Buy groceries",
-  completed: false,
-});
-// ✅ TypeScript error if missing required fields or wrong types
-
-// Update
-await db.update("todos")
-  .where("id", "=", "123")
-  .set({ completed: true })
-  .execute();
-
-// Delete
-await db.delete("todos")
-  .where("completed", "=", true)
-  .execute();
-```
-
-### 5. Vue Integration
-
-```typescript
-// In main.ts - define schema and create plugin
-import { createSQLite } from "@alexop/sqlite-vue";
-import { z } from "zod";
-
-const dbSchema = {
-  todos: z.object({
-    id: z.string(),
-    title: z.string(),
-    completed: z.boolean().default(false),
-  })
-} as const;
-
-app.use(createSQLite({
-  schema: dbSchema,
-  filename: "file:app.sqlite3?vfs=opfs",
-  migrations: [...]
-}));
-
-// In components - use reactive query
-const { rows: todos, loading, error } = useSQLiteQuery(
-  (db) => db.query("todos").orderBy("createdAt", "DESC").all(),
-  { tables: ["todos"] }
-);
-// rows is fully typed as Ref<Array<Todo> | null>
-```
-
-### 6. Table Change Notifications
-
-After mutations, call `db.notifyTable("table_name")` to trigger reactive updates:
-
-```typescript
-async function addTodo() {
-  const db = await dbPromise;
-  await db.insert("todos").values({ title: newTitle.value });
-  db.notifyTable("todos"); // Triggers re-run of all subscribers
-}
-```
-
-### 7. Advanced: Raw SQL Access
-
-For complex queries not supported by the builder:
-
-```typescript
-const results = await db.raw<CustomType>("SELECT * FROM todos WHERE ...", [params]);
-await db.exec("PRAGMA foreign_keys = ON");
-```
+For detailed usage examples and API documentation, see `docs/src/content/docs/`.

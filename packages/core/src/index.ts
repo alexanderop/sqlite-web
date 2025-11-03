@@ -2,6 +2,7 @@ import { sqlite3Worker1Promiser } from "@sqlite.org/sqlite-wasm";
 import type { z } from "zod";
 import { QueryBuilder } from "./query-builder";
 import { InsertBuilder, UpdateBuilder, DeleteBuilder } from "./mutation-builders";
+import { Transaction } from "./transaction";
 import type { SchemaRegistry, TableName, TableRow } from "./types";
 
 export type Migration = {
@@ -30,6 +31,12 @@ export type SQLiteClient<TSchema extends SchemaRegistry> = {
   delete<TTable extends TableName<TSchema>>(
     table: TTable
   ): DeleteBuilder<TableRow<TSchema, TTable>>;
+
+  // Transaction support
+  transaction<T>(
+    fn: (tx: Transaction<TSchema>) => Promise<T>
+  ): Promise<T>;
+  beginTransaction(): Promise<Transaction<TSchema>>;
 
   // Table change notifications
   notifyTable(table: TableName<TSchema>): void;
@@ -196,6 +203,26 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
       return new DeleteBuilder(executeQuery, String(table));
     },
 
+    // Transaction support
+    async transaction<T>(fn: (tx: Transaction<TSchema>) => Promise<T>): Promise<T> {
+      await executeQuery("BEGIN TRANSACTION", []);
+      const tx = new Transaction(executeQuery, opts.schema);
+
+      try {
+        const result = await fn(tx);
+        await tx.commit();
+        return result;
+      } catch (error) {
+        await tx.rollback();
+        throw error;
+      }
+    },
+
+    async beginTransaction(): Promise<Transaction<TSchema>> {
+      await executeQuery("BEGIN TRANSACTION", []);
+      return new Transaction(executeQuery, opts.schema);
+    },
+
     // Notifications
     notifyTable: emit,
     subscribe,
@@ -211,3 +238,4 @@ export * from "./types";
 export * from "./zod-utils";
 export { QueryBuilder } from "./query-builder";
 export { InsertBuilder, UpdateBuilder, DeleteBuilder } from "./mutation-builders";
+export { Transaction } from "./transaction";
