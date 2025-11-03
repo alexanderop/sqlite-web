@@ -5,10 +5,7 @@ import { z } from "zod";
 
 // Define Zod schema for the database
 const todoSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  completed: z.boolean().default(false),
-  createdAt: z.string().default(() => new Date().toISOString()),
+  completed: z.boolean().default(false), createdAt: z.string().default(() => new Date().toISOString()), id: z.string(), title: z.string(),
 });
 
 const dbSchema = {
@@ -16,11 +13,8 @@ const dbSchema = {
 } as const;
 
 const sqlite = createSQLite({
-  schema: dbSchema,
-  filename: "file:app.sqlite3?vfs=opfs",
-  migrations: [
+  filename: "file:app.sqlite3?vfs=opfs", migrations: [
     {
-      version: 1,
       sql: `
         CREATE TABLE IF NOT EXISTS todos (
           id TEXT PRIMARY KEY,
@@ -28,9 +22,9 @@ const sqlite = createSQLite({
           completed INTEGER DEFAULT 0,
           createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         );
-      `,
+      `, version: 1,
     },
-  ],
+  ], schema: dbSchema,
 });
 
 createApp(App).use(sqlite).mount("#app");

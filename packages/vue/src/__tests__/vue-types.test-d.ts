@@ -7,17 +7,14 @@
  * Run with: pnpm test:type
  */
 
-import { describe, it, expectTypeOf } from "vitest";
+import { describe, expectTypeOf, it } from "vitest";
 import { createTypedComposables } from "../typed-composables";
 import { z } from "zod";
 import type { SQLiteClient } from "@alexop/sqlite-core";
 
 // Define test schema (same as in example app)
 const todoSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  completed: z.boolean(),
-  createdAt: z.string(),
+  completed: z.boolean(), createdAt: z.string(), id: z.string(), title: z.string(),
 });
 
 const testSchema = {

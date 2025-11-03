@@ -7,23 +7,17 @@
  * Run with: pnpm test:type
  */
 
-import { describe, it, expectTypeOf } from "vitest";
+import { describe, expectTypeOf, it } from "vitest";
 import type { SQLiteClient } from "../index";
 import { z } from "zod";
 
 // Define test schema
 const todoSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  completed: z.boolean(),
-  createdAt: z.string(),
+  completed: z.boolean(), createdAt: z.string(), id: z.string(), title: z.string(),
 });
 
 const userSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  email: z.string(),
-  age: z.number().optional(),
+  age: z.number().optional(), email: z.string(), id: z.number(), name: z.string(),
 });
 
 const testSchema = {
@@ -200,7 +194,7 @@ describe("UpdateBuilder - Type Safety", () => {
   it("accepts valid column names and types in set()", () => {
     expectTypeOf(db.update("todos").set({ title: "Updated" })).toBeObject();
     expectTypeOf(db.update("todos").set({ completed: true })).toBeObject();
-    expectTypeOf(db.update("users").set({ name: "John", age: 30 })).toBeObject();
+    expectTypeOf(db.update("users").set({ age: 30, name: "John" })).toBeObject();
   });
 
   it("rejects invalid fields in set()", ({ expect }) => {
@@ -261,18 +255,13 @@ describe("InsertBuilder - Type Safety", () => {
   it("accepts valid data matching schema", () => {
     expectTypeOf(
       db.insert("todos").values({
-        id: "123",
-        title: "Test",
-        completed: false,
-        createdAt: "2024-01-01"
+        completed: false, createdAt: "2024-01-01", id: "123", title: "Test"
       })
     ).toEqualTypeOf<Promise<number>>();
 
     expectTypeOf(
       db.insert("users").values({
-        id: 1,
-        name: "John",
-        email: "john@example.com"
+        email: "john@example.com", id: 1, name: "John"
       })
     ).toEqualTypeOf<Promise<number>>();
   });

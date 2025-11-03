@@ -11,23 +11,16 @@
  * Run with: pnpm --filter @alexop/sqlite-core test
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createSQLiteClient } from "../index";
 import { z } from "zod";
 
 const todoSchema = z.object({
-  id: z.string(),
-  title: z.string().min(1),
-  completed: z.boolean().default(false),
-  priority: z.string().default("medium"),
-  createdAt: z.string().default(() => new Date().toISOString()),
+  completed: z.boolean().default(false), createdAt: z.string().default(() => new Date().toISOString()), id: z.string(), priority: z.string().default("medium"), title: z.string().min(1),
 });
 
 const userSchema = z.object({
-  id: z.number(),
-  name: z.string().min(1),
-  email: z.string().email(),
-  age: z.number().min(0).max(150).optional(),
+  age: z.number().min(0).max(150).optional(), email: z.string().email(), id: z.number(), name: z.string().min(1),
 });
 
 const testSchema = {
@@ -38,14 +31,11 @@ const testSchema = {
 describe("Mutations", () => {
   it("should insert with default values", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db.insert("todos").values({
@@ -63,36 +53,28 @@ describe("Mutations", () => {
 
   it("should reject insert with validation error", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, age INTEGER)`,
+          sql: `CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, age INTEGER)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     // Invalid email
     await expect(
       db.insert("users").values({
-        id: 1,
-        name: "Test",
-        email: "not-an-email",
+        email: "not-an-email", id: 1, name: "Test",
       })
     ).rejects.toThrow("Invalid email");
   });
 
   it("should update single field with WHERE", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db.insert("todos").values({ id: "1", title: "Original title" });
@@ -105,19 +87,16 @@ describe("Mutations", () => {
 
   it("should update multiple fields with multiple WHERE", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
-    await db.insert("todos").values({ id: "1", title: "Task 1", completed: false, priority: "high" });
-    await db.insert("todos").values({ id: "2", title: "Task 2", completed: false, priority: "low" });
-    await db.insert("todos").values({ id: "3", title: "Task 3", completed: true, priority: "high" });
+    await db.insert("todos").values({ completed: false, id: "1", priority: "high", title: "Task 1" });
+    await db.insert("todos").values({ completed: false, id: "2", priority: "low", title: "Task 2" });
+    await db.insert("todos").values({ completed: true, id: "3", priority: "high", title: "Task 3" });
 
     await db
       .update("todos")
@@ -137,17 +116,14 @@ describe("Mutations", () => {
 
   it("should reject update with validation error", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, age INTEGER)`,
+          sql: `CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, age INTEGER)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
-    await db.insert("users").values({ id: 1, name: "Alice", email: "alice@example.com" });
+    await db.insert("users").values({ email: "alice@example.com", id: 1, name: "Alice" });
 
     // Invalid email
     await expect(
@@ -157,14 +133,11 @@ describe("Mutations", () => {
 
   it("should delete single row with WHERE", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db.insert("todos").values({ id: "1", title: "Task 1" });
@@ -179,19 +152,16 @@ describe("Mutations", () => {
 
   it("should delete multiple rows matching WHERE", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
-    await db.insert("todos").values({ id: "1", title: "Task 1", completed: true });
-    await db.insert("todos").values({ id: "2", title: "Task 2", completed: true });
-    await db.insert("todos").values({ id: "3", title: "Task 3", completed: false });
+    await db.insert("todos").values({ completed: true, id: "1", title: "Task 1" });
+    await db.insert("todos").values({ completed: true, id: "2", title: "Task 2" });
+    await db.insert("todos").values({ completed: false, id: "3", title: "Task 3" });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await db.delete("todos").where("completed", "=", 1 as any).execute();
@@ -203,14 +173,11 @@ describe("Mutations", () => {
 
   it("should handle constraint violation on duplicate key", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db.insert("todos").values({ id: "1", title: "First" });
@@ -222,14 +189,11 @@ describe("Mutations", () => {
 
   it("should notify table after mutation", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     let notified = false;
@@ -245,18 +209,15 @@ describe("Mutations", () => {
 
   it("should handle full CRUD workflow", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     // Create
-    await db.insert("todos").values({ id: "1", title: "Initial task", completed: false });
+    await db.insert("todos").values({ completed: false, id: "1", title: "Initial task" });
 
     let result = await db.query("todos").all();
     expect(result).toHaveLength(1);
@@ -266,7 +227,7 @@ describe("Mutations", () => {
     expect(todo?.title).toBe("Initial task");
 
     // Update
-    await db.update("todos").where("id", "=", "1").set({ title: "Updated task", completed: true }).execute();
+    await db.update("todos").where("id", "=", "1").set({ completed: true, title: "Updated task" }).execute();
 
     const updated = await db.query("todos").where("id", "=", "1").first();
     expect(updated?.title).toBe("Updated task");

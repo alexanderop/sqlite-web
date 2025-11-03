@@ -12,45 +12,34 @@
  * Run with: pnpm --filter @alexop/sqlite-core test
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createSQLiteClient } from "../index";
 import { z } from "zod";
 
 const todoSchema = z.object({
-  id: z.string(),
-  title: z.string().min(1),
-  completed: z.boolean().default(false),
+  completed: z.boolean().default(false), id: z.string(), title: z.string().min(1),
 });
 
 const userSchema = z.object({
-  id: z.number(),
-  name: z.string().min(1),
-  email: z.string().email(),
+  email: z.string().email(), id: z.number(), name: z.string().min(1),
 });
 
 const accountSchema = z.object({
-  id: z.number(),
-  userId: z.number(),
-  balance: z.number().default(0),
+  balance: z.number().default(0), id: z.number(), userId: z.number(),
 });
 
 const testSchema = {
-  todos: todoSchema,
-  users: userSchema,
-  accounts: accountSchema,
+  accounts: accountSchema, todos: todoSchema, users: userSchema,
 } as const;
 
 describe("Transactions", () => {
   it("should auto-commit on success", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db.transaction(async (tx) => {
@@ -65,14 +54,11 @@ describe("Transactions", () => {
 
   it("should auto-rollback on error", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await expect(
@@ -89,14 +75,11 @@ describe("Transactions", () => {
 
   it("should rollback on validation error", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     // Zod error format changed - just check that it throws
@@ -115,23 +98,20 @@ describe("Transactions", () => {
 
   it("should ensure atomicity for financial transfer", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
           sql: `
             CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL);
             CREATE TABLE accounts (id INTEGER PRIMARY KEY, userId INTEGER NOT NULL, balance REAL DEFAULT 0);
-          `,
+          `, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
-    await db.insert("users").values({ id: 1, name: "Alice", email: "alice@example.com" });
-    await db.insert("users").values({ id: 2, name: "Bob", email: "bob@example.com" });
-    await db.insert("accounts").values({ id: 1, userId: 1, balance: 1000 });
-    await db.insert("accounts").values({ id: 2, userId: 2, balance: 500 });
+    await db.insert("users").values({ email: "alice@example.com", id: 1, name: "Alice" });
+    await db.insert("users").values({ email: "bob@example.com", id: 2, name: "Bob" });
+    await db.insert("accounts").values({ balance: 1000, id: 1, userId: 1 });
+    await db.insert("accounts").values({ balance: 500, id: 2, userId: 2 });
 
     // Successful transfer
     await db.transaction(async (tx) => {
@@ -152,14 +132,11 @@ describe("Transactions", () => {
 
   it("should query within transaction", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db.insert("todos").values({ id: "1", title: "Existing" });
@@ -180,14 +157,11 @@ describe("Transactions", () => {
 
   it("should support manual begin/commit", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     const tx = await db.beginTransaction();
@@ -200,14 +174,11 @@ describe("Transactions", () => {
 
   it("should support manual rollback", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     const tx = await db.beginTransaction();
@@ -220,14 +191,11 @@ describe("Transactions", () => {
 
   it("should prevent nested transactions (SQLite limitation)", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     const tx1 = await db.beginTransaction();

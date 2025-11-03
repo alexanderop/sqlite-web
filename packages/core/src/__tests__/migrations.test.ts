@@ -11,7 +11,7 @@
  * Run with: pnpm --filter @alexop/sqlite-core test
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createSQLiteClient } from "../index";
 import { z } from "zod";
 
@@ -27,14 +27,11 @@ const testSchema = {
 describe("Migrations", () => {
   it("should run pending migrations", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db.insert("todos").values({ id: "1", title: "Test" });
@@ -47,28 +44,22 @@ describe("Migrations", () => {
 
     // First client - apply migration
     const db1 = await createSQLiteClient({
-      schema: testSchema,
-      filename,
-      migrations: [
+      filename, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db1.insert("todos").values({ id: "1", title: "First" });
 
     // Second client - should skip migration
     const db2 = await createSQLiteClient({
-      schema: testSchema,
-      filename,
-      migrations: [
+      filename, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     const result = await db2.query("todos").all();
@@ -78,14 +69,11 @@ describe("Migrations", () => {
 
   it("should track migration versions in __migrations__ table", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     const migrations = await db.raw<{ version: number }>("SELECT version FROM __migrations__");
@@ -98,32 +86,25 @@ describe("Migrations", () => {
 
     // Apply first migration
     const db1 = await createSQLiteClient({
-      schema: testSchema,
-      filename,
-      migrations: [
+      filename, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db1.insert("todos").values({ id: "1", title: "Test" });
 
     // Apply second migration
     const db2 = await createSQLiteClient({
-      schema: testSchema,
-      filename,
-      migrations: [
+      filename, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`, version: 1,
         },
         {
-          version: 2,
-          sql: `ALTER TABLE todos ADD COLUMN completed INTEGER DEFAULT 0`,
+          sql: `ALTER TABLE todos ADD COLUMN completed INTEGER DEFAULT 0`, version: 2,
         },
-      ],
+      ], schema: testSchema,
     });
 
     const migrations = await db2.raw<{ version: number }>("SELECT version FROM __migrations__ ORDER BY version");
@@ -134,22 +115,17 @@ describe("Migrations", () => {
 
   it("should handle migrations with unsorted versions", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 3,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`, version: 3,
         },
         {
-          version: 1,
-          sql: `CREATE TABLE users (id INTEGER PRIMARY KEY)`,
+          sql: `CREATE TABLE users (id INTEGER PRIMARY KEY)`, version: 1,
         },
         {
-          version: 2,
-          sql: `CREATE TABLE posts (id INTEGER PRIMARY KEY)`,
+          sql: `CREATE TABLE posts (id INTEGER PRIMARY KEY)`, version: 2,
         },
-      ],
+      ], schema: testSchema,
     });
 
     // Should apply in order: 1, 2, 3
@@ -162,9 +138,7 @@ describe("Migrations", () => {
 
   it("should start fresh database with no applied migrations", async ({ expect }) => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [],
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [], schema: testSchema,
     });
 
     // Should not error even with no migrations

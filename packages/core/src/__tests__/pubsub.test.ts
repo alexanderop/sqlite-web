@@ -10,20 +10,16 @@
  * Run with: pnpm --filter @alexop/sqlite-core test
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createSQLiteClient } from "../index";
 import { z } from "zod";
 
 const todoSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  completed: z.boolean().default(false),
+  completed: z.boolean().default(false), id: z.string(), title: z.string(),
 });
 
 const userSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  email: z.string(),
+  email: z.string(), id: z.number(), name: z.string(),
 });
 
 const testSchema = {
@@ -34,14 +30,11 @@ const testSchema = {
 describe("Pub/Sub", () => {
   it("should notify single subscriber", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     let notifyCount = 0;
@@ -58,14 +51,11 @@ describe("Pub/Sub", () => {
 
   it("should notify multiple subscribers", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     let count1 = 0;
@@ -91,14 +81,11 @@ describe("Pub/Sub", () => {
 
   it("should unsubscribe correctly", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     let count = 0;
@@ -117,17 +104,14 @@ describe("Pub/Sub", () => {
 
   it("should isolate notifications by table", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
           sql: `
             CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0);
             CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL);
-          `,
+          `, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     let todosCount = 0;
@@ -151,14 +135,11 @@ describe("Pub/Sub", () => {
 
   it("should handle notify with no subscribers", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     // Should not throw
@@ -167,14 +148,11 @@ describe("Pub/Sub", () => {
 
   it("should unsubscribe multiple subscribers independently", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     let count1 = 0;

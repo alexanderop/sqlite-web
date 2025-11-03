@@ -5,9 +5,9 @@
  * Import and use these in your components for full type safety.
  */
 
-import { inject, type InjectionKey } from "vue";
-import { ref, onMounted, onBeforeUnmount, type Ref } from "vue";
-import type { SchemaRegistry, SQLiteClient } from "@alexop/sqlite-core";
+import { type InjectionKey, inject } from "vue";
+import { type Ref, onBeforeUnmount, onMounted, ref } from "vue";
+import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-core";
 import { SQLITE_CLIENT_KEY } from "./injection";
 
 export interface UseSQLiteQueryReturn<T> {
@@ -88,10 +88,7 @@ export function createTypedComposables<TSchema extends SchemaRegistry>() {
     });
 
     return {
-      rows: rows as Ref<T | null>,
-      loading,
-      error,
-      refresh: run,
+      error, loading, refresh: run, rows: rows as Ref<T | null>,
     };
   }
 

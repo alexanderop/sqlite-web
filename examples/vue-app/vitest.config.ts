@@ -1,16 +1,20 @@
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
-import path from "path";
+import path from "node:path";
 import { playwright } from "@vitest/browser-playwright";
 
 export default defineConfig({
-  plugins: [vue()],
-  resolve: {
+  optimizeDeps: {
+    exclude: ["@sqlite.org/sqlite-wasm"],
+  }, plugins: [vue()], resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  },
-  test: {
+  }, server: {
+    headers: {
+      "Cross-Origin-Embedder-Policy": "require-corp", "Cross-Origin-Opener-Policy": "same-origin",
+    },
+  }, test: {
     globals: true,
     // Browser tests for Vue components with SQLite
     browser: {
@@ -25,8 +29,7 @@ export default defineConfig({
       screenshotFailures: true,
       // Configure viewport for consistent testing
       viewport: {
-        width: 1280,
-        height: 720,
+        height: 720, width: 1280,
       },
       // Enable trace on failure for debugging
       trace: "retain-on-failure",
@@ -36,14 +39,5 @@ export default defineConfig({
       },
     },
     include: ["src/**/*.{test,spec}.ts"],
-  },
-  server: {
-    headers: {
-      "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "require-corp",
-    },
-  },
-  optimizeDeps: {
-    exclude: ["@sqlite.org/sqlite-wasm"],
   },
 });

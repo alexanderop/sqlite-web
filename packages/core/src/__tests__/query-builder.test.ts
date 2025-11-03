@@ -11,16 +11,12 @@
  * Run with: pnpm --filter @alexop/sqlite-core test
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createSQLiteClient } from "../index";
 import { z } from "zod";
 
 const todoSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  completed: z.boolean().default(false),
-  priority: z.string().default("medium"),
-  createdAt: z.string().default(() => new Date().toISOString()),
+  completed: z.boolean().default(false), createdAt: z.string().default(() => new Date().toISOString()), id: z.string(), priority: z.string().default("medium"), title: z.string(),
 });
 
 const testSchema = {
@@ -30,19 +26,16 @@ const testSchema = {
 describe("Query Builder", () => {
   it("should filter with basic WHERE clause", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
-    await db.insert("todos").values({ id: "1", title: "First", completed: false });
-    await db.insert("todos").values({ id: "2", title: "Second", completed: true });
-    await db.insert("todos").values({ id: "3", title: "Third", completed: false });
+    await db.insert("todos").values({ completed: false, id: "1", title: "First" });
+    await db.insert("todos").values({ completed: true, id: "2", title: "Second" });
+    await db.insert("todos").values({ completed: false, id: "3", title: "Third" });
 
     const result = await db.query("todos").where("completed", "=", false).all();
 
@@ -53,19 +46,16 @@ describe("Query Builder", () => {
 
   it("should chain multiple WHERE conditions", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
-    await db.insert("todos").values({ id: "1", title: "Task 1", completed: false, priority: "high" });
-    await db.insert("todos").values({ id: "2", title: "Task 2", completed: false, priority: "low" });
-    await db.insert("todos").values({ id: "3", title: "Task 3", completed: true, priority: "high" });
+    await db.insert("todos").values({ completed: false, id: "1", priority: "high", title: "Task 1" });
+    await db.insert("todos").values({ completed: false, id: "2", priority: "low", title: "Task 2" });
+    await db.insert("todos").values({ completed: true, id: "3", priority: "high", title: "Task 3" });
 
     const result = await db
       .query("todos")
@@ -79,19 +69,16 @@ describe("Query Builder", () => {
 
   it("should filter with IN operator", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
-    await db.insert("todos").values({ id: "1", title: "First", priority: "high" });
-    await db.insert("todos").values({ id: "2", title: "Second", priority: "medium" });
-    await db.insert("todos").values({ id: "3", title: "Third", priority: "low" });
+    await db.insert("todos").values({ id: "1", priority: "high", title: "First" });
+    await db.insert("todos").values({ id: "2", priority: "medium", title: "Second" });
+    await db.insert("todos").values({ id: "3", priority: "low", title: "Third" });
 
     const result = await db.query("todos").where("priority", "IN", ["high", "low"]).all();
 
@@ -103,14 +90,11 @@ describe("Query Builder", () => {
 
   it("should sort with ORDER BY", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db.insert("todos").values({ id: "3", title: "Third" });
@@ -126,14 +110,11 @@ describe("Query Builder", () => {
 
   it("should paginate with LIMIT and SKIP", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db.insert("todos").values({ id: "1", title: "First" });
@@ -152,17 +133,14 @@ describe("Query Builder", () => {
 
   it("should project with SELECT", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
-    await db.insert("todos").values({ id: "1", title: "Task", completed: false, priority: "high" });
+    await db.insert("todos").values({ completed: false, id: "1", priority: "high", title: "Task" });
 
     const result = await db.query("todos").select("id", "title").all();
 
@@ -174,14 +152,11 @@ describe("Query Builder", () => {
 
   it("should return single result with first()", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
     await db.insert("todos").values({ id: "1", title: "First" });
@@ -196,19 +171,16 @@ describe("Query Builder", () => {
 
   it("should count with count()", async () => {
     const db = await createSQLiteClient({
-      schema: testSchema,
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
         {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0, priority TEXT DEFAULT 'medium', createdAt TEXT DEFAULT CURRENT_TIMESTAMP)`, version: 1,
         },
-      ],
+      ], schema: testSchema,
     });
 
-    await db.insert("todos").values({ id: "1", title: "First", completed: false });
-    await db.insert("todos").values({ id: "2", title: "Second", completed: true });
-    await db.insert("todos").values({ id: "3", title: "Third", completed: false });
+    await db.insert("todos").values({ completed: false, id: "1", title: "First" });
+    await db.insert("todos").values({ completed: true, id: "2", title: "Second" });
+    await db.insert("todos").values({ completed: false, id: "3", title: "Third" });
 
     const total = await db.query("todos").count();
     expect(total).toBe(3);

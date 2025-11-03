@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { QueryBuilder } from "./query-builder";
-import { InsertBuilder, UpdateBuilder, DeleteBuilder } from "./mutation-builders";
+import { DeleteBuilder, InsertBuilder, UpdateBuilder } from "./mutation-builders";
 import type { SchemaRegistry, TableName, TableRow } from "./types";
 
 /**

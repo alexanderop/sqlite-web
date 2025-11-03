@@ -10,10 +10,7 @@ import { z } from "zod";
 
 // Define the same schema as in main.ts
 const todoSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  completed: z.boolean().default(false),
-  createdAt: z.string().default(() => new Date().toISOString()),
+  completed: z.boolean().default(false), createdAt: z.string().default(() => new Date().toISOString()), id: z.string(), title: z.string(),
 });
 
 export const dbSchema = {

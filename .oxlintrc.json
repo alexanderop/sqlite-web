@@ -9,7 +9,7 @@
     "SharedArrayBuffer": "readonly",
     "Atomics": "readonly"
   },
-  "plugins": ["typescript", "jsx-a11y", "vitest", "unicorn"],
+  "plugins": ["typescript", "jsx-a11y", "vitest", "unicorn", "jest", "react"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
@@ -24,10 +24,25 @@
     "typescript/no-unused-vars": "warn",
     "typescript/explicit-function-return-type": "off",
     "typescript/no-non-null-assertion": "warn",
+    "typescript/consistent-type-definitions": "off",
     "unicorn/filename-case": "off",
     "unicorn/prevent-abbreviations": "off",
+    "unicorn/no-array-sort": "warn",
+    "unicorn/prefer-modern-math-apis": "warn",
+    "unicorn/prefer-node-protocol": "warn",
     "no-console": "off",
-    "no-debugger": "warn"
+    "no-debugger": "warn",
+    "no-await-in-loop": "warn",
+    "jest/require-to-throw-message": "warn",
+    "eqeqeq": "error",
+    "no-var": "error",
+    "prefer-const": "warn",
+    "prefer-arrow-callback": "off",
+    "sort-imports": "warn",
+    "sort-keys": "warn",
+    "no-magic-numbers": "off",
+    "max-lines-per-function": "off",
+    "func-style": "off"
   },
   "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/.astro/**", "**/coverage/**"],
   "settings": {

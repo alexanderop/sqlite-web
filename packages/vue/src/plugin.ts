@@ -1,9 +1,9 @@
 import type { App, Plugin } from "vue";
 import { SQLITE_CLIENT_KEY } from "./injection";
 import {
-  createSQLiteClient,
   type Migration,
   type SchemaRegistry,
+  createSQLiteClient,
 } from "@alexop/sqlite-core";
 
 export type SQLiteOptions<TSchema extends SchemaRegistry> = {

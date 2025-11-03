@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { render } from "vitest-browser-vue";
 import { page } from "vitest/browser";
 import { createSQLite } from "@alexop/sqlite-vue";
@@ -7,10 +7,7 @@ import App from "./App.vue";
 
 // Define Zod schema for the database
 const todoSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  completed: z.boolean().default(false),
-  createdAt: z.string().default(() => new Date().toISOString()),
+  completed: z.boolean().default(false), createdAt: z.string().default(() => new Date().toISOString()), id: z.string(), title: z.string(),
 });
 
 const dbSchema = {
@@ -20,11 +17,8 @@ const dbSchema = {
 // Helper to render App with SQLite plugin
 function renderApp() {
   const sqlitePlugin = createSQLite({
-    schema: dbSchema,
-    filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-    migrations: [
+    filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
       {
-        version: 1,
         sql: `
           CREATE TABLE IF NOT EXISTS todos (
             id TEXT PRIMARY KEY,
@@ -32,9 +26,9 @@ function renderApp() {
             completed INTEGER DEFAULT 0,
             createdAt TEXT DEFAULT CURRENT_TIMESTAMP
           );
-        `,
+        `, version: 1,
       },
-    ],
+    ], schema: dbSchema,
   });
 
   return render(App, {

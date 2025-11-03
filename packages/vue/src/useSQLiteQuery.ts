@@ -1,4 +1,4 @@
-import { ref, onMounted, onBeforeUnmount, type Ref } from "vue";
+import { type Ref, onBeforeUnmount, onMounted, ref } from "vue";
 import { useSQLiteClientAsync } from "./useSQLiteClientAsync";
 import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-core";
 
@@ -55,9 +55,6 @@ export function useSQLiteQuery<T>(
   });
 
   return {
-    rows: rows as Ref<T | null>,
-    loading,
-    error,
-    refresh: run,
+    error, loading, refresh: run, rows: rows as Ref<T | null>,
   };
 }

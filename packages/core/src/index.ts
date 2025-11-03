@@ -1,7 +1,7 @@
 import { sqlite3Worker1Promiser } from "@sqlite.org/sqlite-wasm";
 import type { z } from "zod";
 import { QueryBuilder } from "./query-builder";
-import { InsertBuilder, UpdateBuilder, DeleteBuilder } from "./mutation-builders";
+import { DeleteBuilder, InsertBuilder, UpdateBuilder } from "./mutation-builders";
 import { Transaction } from "./transaction";
 import type { SchemaRegistry, TableName, TableRow } from "./types";
 
@@ -118,10 +118,7 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
 
       // Get already applied migrations
       const appliedResult = await promiser("exec", {
-        dbId,
-        sql: "SELECT version FROM __migrations__ ORDER BY version",
-        returnValue: "resultRows",
-        rowMode: "object",
+        dbId, returnValue: "resultRows", rowMode: "object", sql: "SELECT version FROM __migrations__ ORDER BY version",
       });
 
       const appliedVersions = new Set(
@@ -142,9 +139,7 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
           // Record migration as applied
           // eslint-disable-next-line no-await-in-loop
           await promiser("exec", {
-            dbId,
-            sql: "INSERT INTO __migrations__ (version) VALUES (?)",
-            bind: [mig.version],
+            bind: [mig.version], dbId, sql: "INSERT INTO __migrations__ (version) VALUES (?)",
           });
         }
       }
@@ -161,11 +156,7 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
     }
 
     const result = await promiser("exec", {
-      dbId,
-      sql,
-      bind: params,
-      returnValue: "resultRows",
-      rowMode: "object",
+      bind: params, dbId, returnValue: "resultRows", rowMode: "object", sql,
     });
 
     if (result.type === "error") {

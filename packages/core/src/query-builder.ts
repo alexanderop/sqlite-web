@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { SQLOperator, SortDirection, QueryResult } from "./types";
+import type { QueryResult, SQLOperator, SortDirection } from "./types";
 
 /**
  * Query builder for SELECT queries with method chaining
@@ -98,7 +98,7 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
       sql += ` OFFSET ${this.offsetCount}`;
     }
 
-    return { sql, params: this.whereParams };
+    return { params: this.whereParams, sql };
   }
 
   /**

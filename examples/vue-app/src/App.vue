@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useSQLiteQuery, useSQLiteClientAsync } from "./composables/db";
+import { useSQLiteClientAsync, useSQLiteQuery } from "./composables/db";
 
 const { rows: todos, loading, error } = useSQLiteQuery(
   (db) => db.query("todos").orderBy("createdAt", "DESC").all(),
@@ -21,10 +21,7 @@ async function addTodo() {
 
   // Use insert builder with validation
   await db.insert("todos").values({
-    id: crypto.randomUUID(),
-    title: newTitle.value,
-    completed: false,
-    createdAt: new Date().toISOString(),
+    completed: false, createdAt: new Date().toISOString(), id: crypto.randomUUID(), title: newTitle.value,
   });
 
   db.notifyTable("todos");
