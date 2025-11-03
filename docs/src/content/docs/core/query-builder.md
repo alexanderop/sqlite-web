@@ -263,6 +263,202 @@ const completedCount = await db.query("todos")
   .count();
 ```
 
+## Aggregation Functions
+
+The query builder supports aggregate functions for analytics and reporting. Each aggregate can be used in two ways:
+
+1. **Terminal operation** - Returns the aggregate value immediately
+2. **Chainable operation** - Adds aggregate for use with `GROUP BY`
+
+### `.sum()`
+
+Calculate sum of numeric values:
+
+```typescript
+// Terminal operation - get total
+const totalRevenue = await db.query("orders").sum("amount");
+// Type: number (returns 0 if no rows)
+
+// With WHERE clause
+const userTotal = await db.query("orders")
+  .where("userId", "=", "user123")
+  .sum("amount");
+
+// Chainable with GROUP BY
+const userTotals = await db.query("orders")
+  .select("userId")
+  .sum("amount", "total")
+  .groupBy("userId")
+  .all();
+// Type: Array<{ userId: string, total: number }>
+```
+
+### `.avg()`
+
+Calculate average of numeric values:
+
+```typescript
+// Terminal operation
+const avgPrice = await db.query("products").avg("price");
+// Type: number (returns 0 if no rows)
+
+// With WHERE clause
+const avgRating = await db.query("reviews")
+  .where("productId", "=", "prod123")
+  .avg("rating");
+
+// Chainable with GROUP BY
+const avgsByCategory = await db.query("products")
+  .select("category")
+  .avg("price", "avgPrice")
+  .groupBy("category")
+  .all();
+// Type: Array<{ category: string, avgPrice: number }>
+```
+
+### `.min()`
+
+Find minimum value:
+
+```typescript
+// Terminal operation
+const lowestPrice = await db.query("products").min("price");
+// Type: number | null (returns null if no rows)
+
+// With WHERE clause
+const earliestDate = await db.query("orders")
+  .where("status", "=", "completed")
+  .min("createdAt");
+
+// Chainable with GROUP BY
+const minPrices = await db.query("products")
+  .select("category")
+  .min("price", "minPrice")
+  .groupBy("category")
+  .all();
+// Type: Array<{ category: string, minPrice: number }>
+```
+
+### `.max()`
+
+Find maximum value:
+
+```typescript
+// Terminal operation
+const highestPrice = await db.query("products").max("price");
+// Type: number | null (returns null if no rows)
+
+// With WHERE clause
+const latestDate = await db.query("orders")
+  .where("userId", "=", "user123")
+  .max("createdAt");
+
+// Chainable with GROUP BY
+const maxPrices = await db.query("products")
+  .select("category")
+  .max("price", "maxPrice")
+  .groupBy("category")
+  .all();
+// Type: Array<{ category: string, maxPrice: number }>
+```
+
+### `.groupBy()`
+
+Group results by one or more columns (must be used with aggregate functions):
+
+```typescript
+// Group by single column
+const statusTotals = await db.query("orders")
+  .select("status")
+  .sum("amount", "total")
+  .groupBy("status")
+  .all();
+// Returns: [{ status: "pending", total: 500 }, { status: "completed", total: 1200 }]
+
+// Group by multiple columns
+const userStatusTotals = await db.query("orders")
+  .select("userId", "status")
+  .sum("amount", "total")
+  .groupBy("userId", "status")
+  .all();
+// Returns: [{ userId: "user1", status: "completed", total: 300 }, ...]
+
+// Multiple aggregates
+const stats = await db.query("orders")
+  .select("userId")
+  .sum("amount", "total")
+  .avg("amount", "average")
+  .min("amount", "minOrder")
+  .max("amount", "maxOrder")
+  .groupBy("userId")
+  .all();
+// Returns: [{ userId: "user1", total: 500, average: 100, minOrder: 50, maxOrder: 200 }]
+
+// With WHERE and ORDER BY
+const topUsers = await db.query("orders")
+  .where("status", "=", "completed")
+  .select("userId")
+  .sum("amount", "total")
+  .groupBy("userId")
+  .orderBy("total", "DESC")
+  .limit(10)
+  .all();
+```
+
+:::tip
+When using `GROUP BY`, always call `.select()` to specify which columns you're grouping by. This ensures type safety and correct SQL generation.
+:::
+
+:::note
+- `sum()` and `avg()` return `0` when no rows match (not `null`)
+- `min()` and `max()` return `null` when no rows match
+- Terminal operations (without alias) execute immediately and return a Promise
+- Chainable operations (with alias) must be used with `groupBy()` and `.all()`
+:::
+
+### Common Aggregation Patterns
+
+#### Sales Reports
+
+```typescript
+// Monthly revenue by category
+const monthlyRevenue = await db.query("orders")
+  .where("status", "=", "completed")
+  .select("category", "month")
+  .sum("amount", "revenue")
+  .groupBy("category", "month")
+  .orderBy("month", "DESC")
+  .all();
+```
+
+#### User Analytics
+
+```typescript
+// User activity statistics
+const userStats = await db.query("orders")
+  .select("userId")
+  .sum("amount", "totalSpent")
+  .avg("amount", "avgOrderValue")
+  .groupBy("userId")
+  .orderBy("totalSpent", "DESC")
+  .limit(100)
+  .all();
+```
+
+#### Product Statistics
+
+```typescript
+// Product price ranges by category
+const priceRanges = await db.query("products")
+  .where("inStock", "=", true)
+  .select("category")
+  .min("price", "minPrice")
+  .max("price", "maxPrice")
+  .avg("price", "avgPrice")
+  .groupBy("category")
+  .all();
+```
+
 ## Chaining
 
 Chain methods to build complex queries:

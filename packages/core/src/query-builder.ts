@@ -42,6 +42,8 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
   private orderByClause: string | undefined;
   private limitCount: number | undefined;
   private offsetCount: number | undefined;
+  private aggregates: Array<{ func: string; column: string; alias: string }> = [];
+  private groupByFields: string[] = [];
 
   /**
    * Create a new QueryBuilder instance
@@ -314,6 +316,214 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
   }
 
   /**
+   * Calculate sum of a numeric column
+   *
+   * Can be used in two ways:
+   * 1. Terminal operation: Returns sum immediately
+   * 2. Chainable operation: Adds aggregate for use with GROUP BY
+   *
+   * @template K - Field name from the table schema
+   * @param column - Column name to sum (must be numeric)
+   * @param alias - Optional alias for the result (required for GROUP BY usage)
+   * @returns Promise<number> for terminal operation, or this QueryBuilder for chaining
+   *
+   * @example
+   * ```typescript
+   * // Terminal operation
+   * const total = await db.query('orders').sum('amount');
+   *
+   * // With WHERE
+   * const userTotal = await db.query('orders')
+   *   .where('userId', '=', '123')
+   *   .sum('amount');
+   *
+   * // With GROUP BY (chainable)
+   * const totals = await db.query('orders')
+   *   .select('userId')
+   *   .sum('amount', 'total')
+   *   .groupBy('userId')
+   *   .all();
+   * ```
+   */
+  sum<K extends keyof TRow>(column: K): Promise<number | null>;
+  sum<K extends keyof TRow>(column: K, alias: string): this;
+  sum<K extends keyof TRow>(column: K, alias?: string): Promise<number | null> | this {
+    if (alias === undefined) {
+      // Terminal operation
+      return this.executeAggregate('SUM', String(column));
+    }
+    // Chainable operation
+    this.aggregates.push({ func: 'SUM', column: String(column), alias });
+    return this;
+  }
+
+  /**
+   * Calculate average of a numeric column
+   *
+   * Can be used in two ways:
+   * 1. Terminal operation: Returns average immediately
+   * 2. Chainable operation: Adds aggregate for use with GROUP BY
+   *
+   * @template K - Field name from the table schema
+   * @param column - Column name to average (must be numeric)
+   * @param alias - Optional alias for the result (required for GROUP BY usage)
+   * @returns Promise<number> for terminal operation, or this QueryBuilder for chaining
+   *
+   * @example
+   * ```typescript
+   * // Terminal operation
+   * const avgScore = await db.query('ratings').avg('score');
+   *
+   * // With GROUP BY (chainable)
+   * const avgScores = await db.query('ratings')
+   *   .select('userId')
+   *   .avg('score', 'avgScore')
+   *   .groupBy('userId')
+   *   .all();
+   * ```
+   */
+  avg<K extends keyof TRow>(column: K): Promise<number | null>;
+  avg<K extends keyof TRow>(column: K, alias: string): this;
+  avg<K extends keyof TRow>(column: K, alias?: string): Promise<number | null> | this {
+    if (alias === undefined) {
+      // Terminal operation
+      return this.executeAggregate('AVG', String(column));
+    }
+    // Chainable operation
+    this.aggregates.push({ func: 'AVG', column: String(column), alias });
+    return this;
+  }
+
+  /**
+   * Find minimum value of a column
+   *
+   * Can be used in two ways:
+   * 1. Terminal operation: Returns minimum immediately
+   * 2. Chainable operation: Adds aggregate for use with GROUP BY
+   *
+   * @template K - Field name from the table schema
+   * @param column - Column name to find minimum
+   * @param alias - Optional alias for the result (required for GROUP BY usage)
+   * @returns Promise<number | null> for terminal operation, or this QueryBuilder for chaining
+   *
+   * @example
+   * ```typescript
+   * // Terminal operation
+   * const minPrice = await db.query('products').min('price');
+   *
+   * // With GROUP BY (chainable)
+   * const minPrices = await db.query('products')
+   *   .select('category')
+   *   .min('price', 'minPrice')
+   *   .groupBy('category')
+   *   .all();
+   * ```
+   */
+  min<K extends keyof TRow>(column: K): Promise<number | null>;
+  min<K extends keyof TRow>(column: K, alias: string): this;
+  min<K extends keyof TRow>(column: K, alias?: string): Promise<number | null> | this {
+    if (alias === undefined) {
+      // Terminal operation
+      return this.executeAggregate('MIN', String(column));
+    }
+    // Chainable operation
+    this.aggregates.push({ func: 'MIN', column: String(column), alias });
+    return this;
+  }
+
+  /**
+   * Find maximum value of a column
+   *
+   * Can be used in two ways:
+   * 1. Terminal operation: Returns maximum immediately
+   * 2. Chainable operation: Adds aggregate for use with GROUP BY
+   *
+   * @template K - Field name from the table schema
+   * @param column - Column name to find maximum
+   * @param alias - Optional alias for the result (required for GROUP BY usage)
+   * @returns Promise<number | null> for terminal operation, or this QueryBuilder for chaining
+   *
+   * @example
+   * ```typescript
+   * // Terminal operation
+   * const maxPrice = await db.query('products').max('price');
+   *
+   * // With GROUP BY (chainable)
+   * const maxPrices = await db.query('products')
+   *   .select('category')
+   *   .max('price', 'maxPrice')
+   *   .groupBy('category')
+   *   .all();
+   * ```
+   */
+  max<K extends keyof TRow>(column: K): Promise<number | null>;
+  max<K extends keyof TRow>(column: K, alias: string): this;
+  max<K extends keyof TRow>(column: K, alias?: string): Promise<number | null> | this {
+    if (alias === undefined) {
+      // Terminal operation
+      return this.executeAggregate('MAX', String(column));
+    }
+    // Chainable operation
+    this.aggregates.push({ func: 'MAX', column: String(column), alias });
+    return this;
+  }
+
+  /**
+   * Group results by one or more columns
+   *
+   * Used with aggregate functions to group rows by specific columns.
+   * Must be used with select() and at least one aggregate function.
+   *
+   * @template K - Field names from the table schema
+   * @param fields - Column names to group by
+   * @returns This QueryBuilder instance for chaining
+   *
+   * @example
+   * ```typescript
+   * // Group by single column
+   * const totals = await db.query('orders')
+   *   .select('userId')
+   *   .sum('amount', 'total')
+   *   .groupBy('userId')
+   *   .all();
+   *
+   * // Group by multiple columns
+   * const stats = await db.query('orders')
+   *   .select('userId', 'status')
+   *   .sum('amount', 'total')
+   *   .groupBy('userId', 'status')
+   *   .all();
+   * ```
+   */
+  groupBy<K extends keyof TRow>(...fields: K[]): this {
+    this.groupByFields = fields.map((f) => String(f));
+    return this;
+  }
+
+  /**
+   * Execute an aggregate function as a terminal operation
+   * @internal
+   */
+  private async executeAggregate(func: string, column: string): Promise<number | null> {
+    let sql = `SELECT ${func}(${column}) as result FROM ${this.tableName}`;
+
+    if (this.whereClauses.length > 0) {
+      sql += ` WHERE ${this.buildWhereClause()}`;
+    }
+
+    const results = await this.executeQuery(sql, this.whereParams) as Array<{ result: number | null }>;
+    const result = results[0]?.result;
+
+    // For SUM and AVG, return 0 if null (no rows or all nulls)
+    if (func === 'SUM' || func === 'AVG') {
+      return result ?? 0;
+    }
+
+    // For MIN and MAX, return null if no rows
+    return result;
+  }
+
+  /**
    * Build the WHERE clause string using stored conjunctions
    * @returns WHERE clause string without the "WHERE" keyword
    * @internal
@@ -338,11 +548,31 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
    * @internal
    */
   private buildSQL(): { sql: string; params: unknown[] } {
-    const fields = this.selectedFields?.join(", ") || "*";
+    let selectParts: string[] = [];
+
+    // Add selected fields
+    if (this.selectedFields && this.selectedFields.length > 0) {
+      selectParts.push(...this.selectedFields);
+    }
+
+    // Add aggregates
+    if (this.aggregates.length > 0) {
+      const aggregateParts = this.aggregates.map(
+        (agg) => `${agg.func}(${agg.column}) as ${agg.alias}`
+      );
+      selectParts.push(...aggregateParts);
+    }
+
+    // If no fields or aggregates specified, use *
+    const fields = selectParts.length > 0 ? selectParts.join(", ") : "*";
     let sql = `SELECT ${fields} FROM ${this.tableName}`;
 
     if (this.whereClauses.length > 0) {
       sql += ` WHERE ${this.buildWhereClause()}`;
+    }
+
+    if (this.groupByFields.length > 0) {
+      sql += ` GROUP BY ${this.groupByFields.join(", ")}`;
     }
 
     if (this.orderByClause) {

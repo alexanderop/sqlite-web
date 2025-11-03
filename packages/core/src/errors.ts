@@ -1,5 +1,10 @@
 import type { ZodIssue } from "zod";
 
+// Type declaration for V8-specific Error.captureStackTrace
+interface ErrorConstructor {
+  captureStackTrace?(targetObject: object, constructorOpt?: Function): void;
+}
+
 /**
  * Base error class for all SQLite-related errors
  *
@@ -30,9 +35,7 @@ export class SQLiteError extends Error {
     this.code = code;
     this.sql = sql;
     // Maintains proper stack trace for where our error was thrown (only available on V8)
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, SQLiteError);
-    }
+    (Error as ErrorConstructor).captureStackTrace?.(this, SQLiteError);
   }
 }
 
@@ -70,9 +73,7 @@ export class ValidationError extends SQLiteError {
     this.name = "ValidationError";
     this.field = field;
     this.issues = issues;
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ValidationError);
-    }
+    (Error as ErrorConstructor).captureStackTrace?.(this, ValidationError);
   }
 }
 
@@ -112,9 +113,7 @@ export class ConstraintError extends SQLiteError {
     super(message, "CONSTRAINT_ERROR", sql);
     this.name = "ConstraintError";
     this.constraint = constraint;
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ConstraintError);
-    }
+    (Error as ErrorConstructor).captureStackTrace?.(this, ConstraintError);
   }
 }
 
