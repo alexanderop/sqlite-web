@@ -283,6 +283,109 @@ await db.insert('users').values({ ... });
 db.notifyTable('users'); // Triggers reactive updates
 ```
 
+## close
+
+Closes the database connection and releases resources.
+
+```typescript
+close(): Promise<void>
+```
+
+### Returns
+
+`Promise<void>` - Resolves when the database is fully closed
+
+### Description
+
+Closes the SQLite worker and flushes OPFS storage. After calling `close()`, all database operations will throw an error with message `"Database is closed"`. This is essential for proper resource cleanup in SPAs and testing scenarios.
+
+Multiple calls to `close()` are safe (idempotent) - subsequent calls will return immediately without error.
+
+### Example
+
+```typescript
+const db = await createSQLiteClient({
+  schema: { users: userSchema },
+  filename: 'file:app.sqlite3?vfs=opfs',
+  migrations: []
+});
+
+// Use database...
+await db.query('users').all();
+
+// Clean up resources when done
+await db.close();
+
+// Subsequent operations will throw
+try {
+  await db.query('users').all();
+} catch (error) {
+  console.error(error.message); // "Database is closed"
+}
+```
+
+### Use Cases
+
+**Testing:** Clean up between tests to avoid resource leaks
+
+```typescript
+import { afterEach } from 'vitest';
+
+let db: SQLiteClient<typeof schema>;
+
+afterEach(async () => {
+  await db.close();
+});
+```
+
+**Vue Component Cleanup:** Close database when component unmounts
+
+```typescript
+import { onUnmounted } from 'vue';
+
+const db = await createSQLiteClient({ ... });
+
+onUnmounted(async () => {
+  await db.close();
+});
+```
+
+**Route Changes in SPAs:** Close old database instance when switching routes
+
+```typescript
+// Before navigating away
+await oldDb.close();
+const newDb = await createSQLiteClient({ ... });
+```
+
+## isClosed
+
+Check if the database connection is closed.
+
+```typescript
+isClosed(): boolean
+```
+
+### Returns
+
+`boolean` - `true` if the database has been closed, `false` otherwise
+
+### Example
+
+```typescript
+const db = await createSQLiteClient({ ... });
+
+console.log(db.isClosed()); // false
+
+await db.close();
+console.log(db.isClosed()); // true
+
+// Use to conditionally close
+if (!db.isClosed()) {
+  await db.close();
+}
+```
+
 ## QueryBuilder
 
 The query builder provides a fluent API for SELECT queries.

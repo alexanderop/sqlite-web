@@ -263,6 +263,41 @@ export type SQLiteClient<TSchema extends SchemaRegistry> = {
    * ```
    */
   raw<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>;
+
+  /**
+   * Close the database connection and release resources
+   *
+   * Closes the SQLite worker and flushes OPFS storage. After calling close(),
+   * all database operations will throw an error. This is essential for proper
+   * resource cleanup in SPAs and testing scenarios.
+   *
+   * Multiple calls to close() are safe (idempotent).
+   *
+   * @returns Promise that resolves when the database is fully closed
+   *
+   * @example
+   * ```typescript
+   * const db = await createSQLiteClient({ ... });
+   * // Use database...
+   * await db.close(); // Clean up resources
+   * ```
+   */
+  close(): Promise<void>;
+
+  /**
+   * Check if the database connection is closed
+   *
+   * @returns true if the database has been closed, false otherwise
+   *
+   * @example
+   * ```typescript
+   * const db = await createSQLiteClient({ ... });
+   * console.log(db.isClosed()); // false
+   * await db.close();
+   * console.log(db.isClosed()); // true
+   * ```
+   */
+  isClosed(): boolean;
 };
 
 /**
@@ -348,6 +383,7 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
 ): Promise<SQLiteClient<TSchema>> {
   let promiser: ReturnType<typeof sqlite3Worker1Promiser> | null = null;
   let dbId: string | null = null;
+  let closed = false;
 
   const emitter = new Map<string, Set<() => void>>();
 
@@ -462,6 +498,10 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
    * @internal
    */
   async function exec(sql: string, params: unknown[] = []) {
+    if (closed) {
+      throw new Error("Database is closed");
+    }
+
     if (!promiser || !dbId) {
       await init();
     }
@@ -550,6 +590,24 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
     // Raw query access
     exec,
     raw: executeQuery,
+
+    // Resource management
+    async close() {
+      if (closed) return; // Idempotent - safe to call multiple times
+
+      if (promiser && dbId) {
+        await promiser("close", { dbId });
+      }
+
+      closed = true;
+      promiser = null;
+      dbId = null;
+      emitter.clear();
+    },
+
+    isClosed() {
+      return closed;
+    },
   };
 }
 
