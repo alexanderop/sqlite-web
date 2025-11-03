@@ -26,14 +26,19 @@ This document outlines the feature roadmap for SQLite Web, a browser-based SQLit
 - **Async Client Access** - `useSQLiteClientAsync()` for imperative queries
 - **Type-safe Integration** - Full TypeScript support with schema inference
 
+**Note**: Currently requires manual `db.notifyTable()` calls to trigger reactivity. Future versions should implement automatic change detection, eliminating the need for manual notifications in Vue components.
+
 ### Testing & Quality
 
-- Basic test coverage:
+- Comprehensive test coverage:
   - migrations.test.ts
   - pubsub.test.ts
   - mutations.test.ts
   - query-builder.test.ts
-  - errors.test.ts
+  - error-handling.test.ts ✅
+  - transactions.test.ts ✅
+  - cleanup.test.ts ✅
+  - aggregates.test.ts ✅
 
 ---
 
@@ -41,10 +46,19 @@ This document outlines the feature roadmap for SQLite Web, a browser-based SQLit
 
 **Goal**: Production-ready library with essential features for most use cases.
 
+**Progress**: 6 of 7 critical/important features completed (86% done!)
+- ✅ Transactions (auto-commit/rollback)
+- ✅ Batch operations
+- ✅ Database cleanup/close
+- ✅ Advanced WHERE conditions (OR, IN, LIKE, IS NULL, BETWEEN, AND/OR grouping)
+- ✅ Better error handling (SQLiteError, ValidationError, ConstraintError)
+- ✅ Aggregation functions (SUM, AVG, MIN, MAX, GROUP BY)
+- ⏳ Basic JOIN support (INNER, LEFT) - **REMAINING**
+
 ### Critical Features (MUST HAVE)
 
-#### 1. Transaction Support ⚠️ HIGHEST PRIORITY
-**Status**: Not implemented
+#### 1. Transaction Support ✅ COMPLETED
+**Status**: ✅ Implemented
 **Priority**: CRITICAL
 
 ```typescript
@@ -69,8 +83,8 @@ try {
 
 ---
 
-#### 2. Batch Operations
-**Status**: Not implemented
+#### 2. Batch Operations ✅ COMPLETED
+**Status**: ✅ Implemented
 **Priority**: CRITICAL
 
 ```typescript
@@ -92,8 +106,8 @@ await db.update("todos")
 
 ---
 
-#### 3. Database Cleanup/Close
-**Status**: Not implemented
+#### 3. Database Cleanup/Close ✅ COMPLETED
+**Status**: ✅ Implemented
 **Priority**: CRITICAL
 
 ```typescript
@@ -108,8 +122,8 @@ db.isClosed(); // boolean
 
 ---
 
-#### 4. Advanced WHERE Conditions
-**Status**: Partially implemented (only single `=` conditions)
+#### 4. Advanced WHERE Conditions ✅ COMPLETED
+**Status**: ✅ Implemented (OR, IN, NOT IN, LIKE, IS NULL, IS NOT NULL, BETWEEN, AND/OR grouping)
 **Priority**: HIGH
 
 ```typescript
@@ -158,8 +172,8 @@ db.query("todos")
 
 ---
 
-#### 5. Better Error Handling
-**Status**: Basic error messages
+#### 5. Better Error Handling ✅ COMPLETED
+**Status**: ✅ Implemented (SQLiteError, ValidationError, ConstraintError)
 **Priority**: HIGH
 
 ```typescript
@@ -194,8 +208,8 @@ try {
 
 ### Important Features (SHOULD HAVE)
 
-#### 6. Aggregation Functions
-**Status**: Only `count()` implemented
+#### 6. Aggregation Functions ✅ COMPLETED
+**Status**: ✅ Implemented (SUM, AVG, MIN, MAX, GROUP BY)
 **Priority**: MEDIUM
 
 ```typescript
@@ -229,12 +243,19 @@ const userTotals = await db.query("orders")
 **Status**: Not implemented
 **Priority**: MEDIUM
 
+**Type Safety Requirements**:
+- Full TypeScript autocomplete for table names in join clauses
+- Autocomplete for column names from both joined tables
+- Type inference for joined result types
+- Compile-time errors for invalid column references across tables
+
 ```typescript
 // INNER JOIN
 const posts = await db.query("posts")
-  .join("users", "posts.userId", "users.id")
-  .select("posts.title", "users.name")
+  .join("users", "posts.userId", "users.id") // Autocomplete for tables & columns
+  .select("posts.title", "users.name") // Autocomplete knows about both tables
   .all();
+// Type: { title: string, name: string }[]
 
 // LEFT JOIN
 const todos = await db.query("todos")
@@ -259,12 +280,17 @@ const data = await db.query("posts")
 **Status**: Not implemented
 **Priority**: LOW
 
+**Type Safety Requirements**:
+- Fully typed return values from `toSQL()` method
+- Type-safe params array
+
 ```typescript
 // See generated SQL without executing
 const sql = db.query("todos")
   .where("completed", "=", false)
   .toSQL();
 // Returns: { sql: "SELECT * FROM todos WHERE completed = ?", params: [false] }
+// Type: { sql: string, params: unknown[] }
 
 // Explain query plan
 const plan = await db.query("todos")
@@ -280,16 +306,22 @@ const plan = await db.query("todos")
 **Status**: Manual via migrations
 **Priority**: LOW
 
+**Type Safety Requirements**:
+- Autocomplete for table names in `createIndex()` and `dropIndex()`
+- Autocomplete for column names from the specified table
+- Type-safe validation that columns exist in the table schema
+
 ```typescript
 // Create index
-await db.createIndex("todos", "completed");
-await db.createIndex("todos", ["userId", "completed"]); // Composite
+await db.createIndex("todos", "completed"); // "todos" and "completed" have autocomplete
+await db.createIndex("todos", ["userId", "completed"]); // Composite with autocomplete
 
 // Drop index
-await db.dropIndex("todos", "idx_completed");
+await db.dropIndex("todos", "idx_completed"); // Table name has autocomplete
 
 // List indexes
-const indexes = await db.getIndexes("todos");
+const indexes = await db.getIndexes("todos"); // Table name has autocomplete
+// Type: { name: string, unique: boolean, columns: string[] }[]
 ```
 
 **Why**: Performance optimization. Currently possible via raw SQL in migrations, but API would be cleaner.
@@ -300,13 +332,19 @@ const indexes = await db.getIndexes("todos");
 **Status**: Not implemented
 **Priority**: LOW
 
+**Type Safety Requirements**:
+- Autocomplete for table names in `getTableSchema()`
+- Fully typed return values with proper type inference
+- Type-safe table names array from `getTables()`
+
 ```typescript
 // Get table info
-const schema = await db.getTableSchema("todos");
-// Returns column info, types, constraints
+const schema = await db.getTableSchema("todos"); // "todos" has autocomplete
+// Type: { columns: Array<{ name: string, type: string, nullable: boolean }>, constraints: ... }
 
 // List all tables
 const tables = await db.getTables();
+// Type: Array<keyof SchemaRegistry> (returns union of all table names)
 ```
 
 **Why**: Useful for debugging and building admin UIs.
@@ -339,12 +377,14 @@ await db.rollbackTo(0); // Back to empty DB
 
 Features deferred to future releases:
 
+**Note**: All features in future versions must maintain full TypeScript type safety with autocomplete support wherever possible.
+
 ### v0.2.0 (Enhanced Querying)
-- Full JOIN support (RIGHT JOIN, CROSS JOIN, self-joins)
-- Subqueries and CTEs (Common Table Expressions)
-- HAVING clause for grouped queries
-- DISTINCT queries
-- UNION/INTERSECT/EXCEPT operations
+- Full JOIN support (RIGHT JOIN, CROSS JOIN, self-joins) - with full type inference
+- Subqueries and CTEs (Common Table Expressions) - with type-safe column references
+- HAVING clause for grouped queries - with autocomplete for aggregate columns
+- DISTINCT queries - with proper type inference
+- UNION/INTERSECT/EXCEPT operations - with type-safe combining of compatible result types
 
 ### v0.3.0 (Advanced Features)
 - Connection pooling (multiple workers)
@@ -354,6 +394,7 @@ Features deferred to future releases:
 - Prepared statements caching
 
 ### v0.4.0 (Framework Integrations)
+- **Automatic Vue Reactivity** - Eliminate manual `db.notifyTable()` calls by detecting mutations automatically
 - React hooks package (`@alexop/sqlite-react`)
 - Svelte stores package (`@alexop/sqlite-svelte`)
 - Solid.js signals package (`@alexop/sqlite-solid`)
@@ -369,21 +410,21 @@ Features deferred to future releases:
 ## 📦 Pre-Release Checklist for v0.1.0
 
 ### Features
-- [ ] Transactions (auto-commit/rollback)
-- [ ] Batch insert operations
-- [ ] Advanced WHERE (OR, IN, LIKE, IS NULL, BETWEEN)
-- [ ] Database close/cleanup method
-- [ ] Better error handling (custom error classes)
-- [ ] Aggregation functions (SUM, AVG, MIN, MAX, GROUP BY)
+- [x] Transactions (auto-commit/rollback) ✅
+- [x] Batch insert operations ✅
+- [x] Advanced WHERE (OR, IN, LIKE, IS NULL, BETWEEN) ✅
+- [x] Database close/cleanup method ✅
+- [x] Better error handling (custom error classes) ✅
+- [x] Aggregation functions (SUM, AVG, MIN, MAX, GROUP BY) ✅
 - [ ] Basic JOIN support (INNER, LEFT)
 
 ### Testing
 - [ ] Test coverage >80%
-- [ ] Transaction tests (commit, rollback, nested)
-- [ ] Batch operation tests
-- [ ] Advanced WHERE clause tests
+- [x] Transaction tests (commit, rollback, nested) ✅
+- [x] Batch operation tests ✅
+- [x] Advanced WHERE clause tests ✅
 - [ ] JOIN query tests
-- [ ] Error handling tests
+- [x] Error handling tests ✅
 - [ ] Browser compatibility tests (Chrome, Firefox, Safari)
 - [ ] Performance benchmarks (1k, 10k, 100k rows)
 
@@ -415,7 +456,8 @@ Features deferred to future releases:
 ### Package Quality
 - [ ] Bundle size analysis
 - [ ] Tree-shaking verification
-- [ ] TypeScript strict mode enabled
+- [x] TypeScript strict mode enabled ✅
+- [x] Full type safety with autocomplete for all APIs ✅
 - [ ] No dependency vulnerabilities
 - [ ] Semantic versioning strategy documented
 
