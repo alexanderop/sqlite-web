@@ -178,16 +178,18 @@ export function createTypedComposables<TSchema extends SchemaRegistry>() {
       await run();
 
       if (options.tables) {
-        options.tables.forEach((table) => {
+        for (const table of options.tables) {
           if (!db) return;
           const unsub = db.subscribe(table, run);
           unsubs.push(unsub);
-        });
+        }
       }
     });
 
     onBeforeUnmount(() => {
-      unsubs.forEach((u) => u());
+      for (const u of unsubs) {
+        u();
+      }
     });
 
     return {

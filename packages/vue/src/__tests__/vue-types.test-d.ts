@@ -7,6 +7,8 @@
  * Run with: pnpm test:type
  */
 
+/* eslint-disable @typescript-eslint/unbound-method */
+
 import { describe, expectTypeOf, it } from "vitest";
 import { createTypedComposables } from "../typed-composables";
 import { z } from "zod";
@@ -39,14 +41,18 @@ describe("Vue Composables - Type Safety", () => {
   it("typed client enforces column name constraints", () => {
     // Verify that SQLiteClient properly types table and column operations
     // The where method should only accept valid column names
-    expectTypeOf(db.query("todos").where).toBeFunction();
-    expectTypeOf(db.delete("todos").where).toBeFunction();
-    expectTypeOf(db.update("todos").where).toBeFunction();
+    const query = db.query("todos");
+    const deleteBuilder = db.delete("todos");
+    const updateBuilder = db.update("todos");
+    expectTypeOf(query.where).toBeFunction();
+    expectTypeOf(deleteBuilder.where).toBeFunction();
+    expectTypeOf(updateBuilder.where).toBeFunction();
   });
 
   it("typed client validates update set() parameter types", () => {
     // The set() method should validate field names and types
-    expectTypeOf(db.update("todos").set).toBeFunction();
+    const updateBuilder = db.update("todos");
+    expectTypeOf(updateBuilder.set).toBeFunction();
   });
 
   it("typed client rejects invalid table names", ({ expect }) => {

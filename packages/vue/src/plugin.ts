@@ -119,7 +119,7 @@ export function createSQLite<TSchema extends SchemaRegistry>(
   return {
     install(app: App) {
       app.provide(SQLITE_CLIENT_KEY, clientPromise);
-      clientPromise.then((client) => {
+      void clientPromise.then((client) => {
         app.config.globalProperties.$sqlite = client;
       });
     },

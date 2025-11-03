@@ -42,7 +42,15 @@
     "sort-keys": "off",
     "no-magic-numbers": "off",
     "max-lines-per-function": "off",
-    "func-style": "off"
+    "func-style": "off",
+    "eslint/no-else-return": "error",
+    "eslint/no-param-reassign": "error",
+    "eslint/array-callback-return": "error",
+    "unicorn/no-array-for-each": "warn",
+    "unicorn/prefer-array-find": "warn",
+    "unicorn/prefer-array-some": "warn",
+    "unicorn/prefer-array-flat-map": "warn",
+    "unicorn/no-array-reduce": "off"
   },
   "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/.astro/**", "**/coverage/**"],
   "settings": {

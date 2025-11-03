@@ -276,7 +276,7 @@ describe("Todo App - Component Integration Tests", () => {
       await expect.element(page.getByText("Third todo")).toBeInTheDocument();
 
       // Delete the second one (middle one in the list)
-      const deleteButtons = await page.getByRole("button", { name: /delete/i }).elements();
+      const deleteButtons = page.getByRole("button", { name: /delete/i }).elements();
       await deleteButtons[1].click();
 
       // First and third should remain
