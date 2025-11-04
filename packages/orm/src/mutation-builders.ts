@@ -1,5 +1,5 @@
 import { type z, ZodError } from "zod";
-import type { SQLOperator } from "./types";
+import type { SQLOperator } from "@alexop/sqlite-core";
 import { ValidationError } from "./errors";
 
 /**

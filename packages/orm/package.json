@@ -1,0 +1,33 @@
+{
+  "name": "@alexop/sqlite-orm",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "test": "vitest run",
+    "test:type": "vitest run",
+    "test:watch": "vitest",
+    "lint": "oxlint .",
+    "lint:type-aware": "oxlint --type-aware .",
+    "lint:fix": "oxlint --fix ."
+  },
+  "dependencies": {
+    "@alexop/sqlite-core": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@sqlite.org/sqlite-wasm": "^3.47.2-build1",
+    "typescript": "^5.7.3",
+    "tsup": "^8.3.5",
+    "vitest": "^2.1.8"
+  }
+}

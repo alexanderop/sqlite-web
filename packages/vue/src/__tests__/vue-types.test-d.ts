@@ -12,7 +12,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 import { createTypedComposables } from "../typed-composables";
 import { z } from "zod";
-import type { SQLiteClient } from "@alexop/sqlite-core";
+import type { SQLiteClient } from "@alexop/sqlite-orm";
 
 // Define test schema (same as in example app)
 const todoSchema = z.object({

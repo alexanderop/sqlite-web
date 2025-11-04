@@ -1,6 +1,6 @@
 import { type Ref, onBeforeUnmount, onMounted, ref } from "vue";
 import { useSQLiteClientAsync } from "./useSQLiteClientAsync";
-import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-core";
+import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-orm";
 
 /**
  * Return type for the useSQLiteQuery composable

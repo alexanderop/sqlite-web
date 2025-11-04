@@ -12,29 +12,17 @@
 
 import { describe, expect, it } from "vitest";
 import { createSQLiteClient } from "../index";
-import { z } from "zod";
-
-const todoSchema = z.object({
-  completed: z.boolean().default(false), id: z.string(), title: z.string(),
-});
-
-const userSchema = z.object({
-  email: z.string(), id: z.number(), name: z.string(),
-});
-
-const testSchema = {
-  todos: todoSchema,
-  users: userSchema,
-} as const;
 
 describe("Pub/Sub", () => {
   it("should notify single subscriber", async () => {
     const db = await createSQLiteClient({
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
+      migrations: [
         {
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
+          version: 1,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
         },
-      ], schema: testSchema,
+      ],
     });
 
     let notifyCount = 0;
@@ -47,15 +35,19 @@ describe("Pub/Sub", () => {
 
     db.notifyTable("todos");
     expect(notifyCount).toBe(2);
+
+    await db.close();
   });
 
   it("should notify multiple subscribers", async () => {
     const db = await createSQLiteClient({
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
+      migrations: [
         {
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
+          version: 1,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
         },
-      ], schema: testSchema,
+      ],
     });
 
     let count1 = 0;
@@ -77,15 +69,19 @@ describe("Pub/Sub", () => {
     expect(count1).toBe(1);
     expect(count2).toBe(1);
     expect(count3).toBe(1);
+
+    await db.close();
   });
 
   it("should unsubscribe correctly", async () => {
     const db = await createSQLiteClient({
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
+      migrations: [
         {
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
+          version: 1,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
         },
-      ], schema: testSchema,
+      ],
     });
 
     let count = 0;
@@ -100,18 +96,22 @@ describe("Pub/Sub", () => {
 
     db.notifyTable("todos");
     expect(count).toBe(1); // Still 1, not incremented
+
+    await db.close();
   });
 
   it("should isolate notifications by table", async () => {
     const db = await createSQLiteClient({
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
+      migrations: [
         {
+          version: 1,
           sql: `
             CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0);
             CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL);
-          `, version: 1,
+          `,
         },
-      ], schema: testSchema,
+      ],
     });
 
     let todosCount = 0;
@@ -131,28 +131,36 @@ describe("Pub/Sub", () => {
     db.notifyTable("users");
     expect(todosCount).toBe(1);
     expect(usersCount).toBe(1);
+
+    await db.close();
   });
 
   it("should handle notify with no subscribers", async () => {
     const db = await createSQLiteClient({
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
+      migrations: [
         {
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
+          version: 1,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
         },
-      ], schema: testSchema,
+      ],
     });
 
     // Should not throw
     expect(() => db.notifyTable("todos")).not.toThrow();
+
+    await db.close();
   });
 
   it("should unsubscribe multiple subscribers independently", async () => {
     const db = await createSQLiteClient({
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
+      migrations: [
         {
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`, version: 1,
+          version: 1,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
         },
-      ], schema: testSchema,
+      ],
     });
 
     let count1 = 0;
@@ -174,5 +182,7 @@ describe("Pub/Sub", () => {
     db.notifyTable("todos");
     expect(count1).toBe(1); // Still 1
     expect(count2).toBe(2); // Incremented
+
+    await db.close();
   });
 });

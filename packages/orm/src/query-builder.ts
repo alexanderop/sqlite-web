@@ -1,5 +1,6 @@
 import type { z } from "zod";
-import type { QueryResult, SQLOperator, SortDirection } from "./types";
+import type { SQLOperator, SortDirection } from "@alexop/sqlite-core";
+import type { QueryResult } from "./types";
 
 /**
  * Immutable properties for QueryBuilder

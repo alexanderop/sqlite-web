@@ -1,6 +1,6 @@
 import { inject } from "vue";
 import { SQLITE_CLIENT_KEY } from "./injection";
-import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-core";
+import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-orm";
 
 /**
  * Composable to access the SQLite client promise in Vue components

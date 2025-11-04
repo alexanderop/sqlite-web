@@ -3,8 +3,9 @@ import { SQLITE_CLIENT_KEY } from "./injection";
 import {
   type Migration,
   type SchemaRegistry,
+  type SQLiteClient,
   createSQLiteClient,
-} from "@alexop/sqlite-core";
+} from "@alexop/sqlite-orm";
 
 /**
  * Configuration options for creating the SQLite Vue plugin
@@ -118,7 +119,8 @@ export function createSQLite<TSchema extends SchemaRegistry>(
 
   return {
     install(app: App) {
-      app.provide(SQLITE_CLIENT_KEY, clientPromise);
+      // Type assertion needed because injection key uses SchemaRegistry but we have specific TSchema
+      app.provide(SQLITE_CLIENT_KEY, clientPromise as unknown as Promise<SQLiteClient<SchemaRegistry>>);
       void clientPromise.then((client) => {
         app.config.globalProperties.$sqlite = client;
       });

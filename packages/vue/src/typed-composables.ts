@@ -11,7 +11,7 @@
 
 import { type InjectionKey, inject } from "vue";
 import { type Ref, onBeforeUnmount, onMounted, ref } from "vue";
-import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-core";
+import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-orm";
 import { SQLITE_CLIENT_KEY } from "./injection";
 
 /**

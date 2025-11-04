@@ -12,17 +12,6 @@
 
 import { describe, expect, it } from "vitest";
 import { createSQLiteClient } from "../index";
-import { z } from "zod";
-
-const todoSchema = z.object({
-  id: z.string(),
-  title: z.string().min(1),
-  completed: z.boolean().default(false),
-});
-
-const testSchema = {
-  todos: todoSchema,
-} as const;
 
 describe("Database Cleanup", () => {
   it("should report not closed initially", async () => {
@@ -34,7 +23,6 @@ describe("Database Cleanup", () => {
           sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
         },
       ],
-      schema: testSchema,
     });
 
     expect(db.isClosed()).toBe(false);
@@ -50,11 +38,28 @@ describe("Database Cleanup", () => {
           sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
         },
       ],
-      schema: testSchema,
     });
 
     await db.close();
     expect(db.isClosed()).toBe(true);
+  });
+
+  it("should fail to exec after close", async () => {
+    const db = await createSQLiteClient({
+      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
+      migrations: [
+        {
+          version: 1,
+          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
+        },
+      ],
+    });
+
+    await db.close();
+
+    await expect(db.exec("SELECT * FROM todos")).rejects.toThrow(
+      "Database is closed"
+    );
   });
 
   it("should fail to query after close", async () => {
@@ -66,33 +71,13 @@ describe("Database Cleanup", () => {
           sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
         },
       ],
-      schema: testSchema,
     });
 
     await db.close();
 
-    await expect(db.query("todos").all()).rejects.toThrow(
+    await expect(db.raw("SELECT * FROM todos")).rejects.toThrow(
       "Database is closed"
     );
-  });
-
-  it("should fail to insert after close", async () => {
-    const db = await createSQLiteClient({
-      filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-      migrations: [
-        {
-          version: 1,
-          sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
-        },
-      ],
-      schema: testSchema,
-    });
-
-    await db.close();
-
-    await expect(
-      db.insert("todos").values({ id: "1", title: "Test" })
-    ).rejects.toThrow("Database is closed");
   });
 
   it("should handle multiple close calls safely (idempotent)", async () => {
@@ -104,7 +89,6 @@ describe("Database Cleanup", () => {
           sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
         },
       ],
-      schema: testSchema,
     });
 
     await db.close();
@@ -123,14 +107,13 @@ describe("Database Cleanup", () => {
           sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, completed INTEGER DEFAULT 0)`,
         },
       ],
-      schema: testSchema,
     });
 
     // Insert should work
-    await db.insert("todos").values({ id: "1", title: "Test task" });
+    await db.exec("INSERT INTO todos (id, title) VALUES (?, ?)", ["1", "Test task"]);
 
     // Query should work
-    const todos = await db.query("todos").all();
+    const todos = await db.raw<{ id: string; title: string }>("SELECT * FROM todos");
     expect(todos).toHaveLength(1);
     expect(todos[0].title).toBe("Test task");
 

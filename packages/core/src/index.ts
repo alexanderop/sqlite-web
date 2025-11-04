@@ -1,233 +1,41 @@
 import { sqlite3Worker1Promiser } from "@sqlite.org/sqlite-wasm";
-import type { z } from "zod";
-import { QueryBuilder } from "./query-builder";
-import { DeleteBuilder, InsertBuilder, UpdateBuilder } from "./mutation-builders";
-import { Transaction } from "./transaction";
-import type { SchemaRegistry, TableName, TableRow } from "./types";
 import { parseSQLiteError } from "./errors";
+import type { Migration } from "./types";
 
 /**
- * Represents a database migration with a version number and SQL statement
- * @example
- * ```typescript
- * const migration: Migration = {
- *   version: 1,
- *   sql: 'CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)'
- * };
- * ```
- */
-export type Migration = {
-  /** Unique version number for the migration (must be positive integer) */
-  version: number;
-  /** SQL statement to execute for this migration */
-  sql: string;
-};
-
-/**
- * Type-safe SQLite client with Zod schema validation and query builder pattern
+ * Minimal SQLite client for browser using WASM and OPFS
  *
- * Provides a fluent API for database operations with compile-time type safety
- * based on your Zod schema definitions. All table names, column names, and values
- * are validated at both compile-time and runtime.
- *
- * @template TSchema - Schema registry mapping table names to Zod schemas
+ * Provides low-level access to SQLite in the browser with raw SQL execution,
+ * migration support, and pub/sub for reactive updates. No query builder or
+ * schema validation - use @alexop/sqlite-orm for those features.
  *
  * @example
  * ```typescript
- * import { z } from 'zod';
  * import { createSQLiteClient } from '@alexop/sqlite-core';
  *
- * const schema = {
- *   users: z.object({
- *     id: z.number(),
- *     name: z.string(),
- *     email: z.string().email()
- *   })
- * } as const;
- *
  * const db = await createSQLiteClient({
- *   schema,
- *   filename: 'mydb.sqlite3'
+ *   filename: 'myapp.sqlite3',
+ *   migrations: [
+ *     {
+ *       version: 1,
+ *       sql: 'CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)'
+ *     }
+ *   ]
  * });
  *
- * // Type-safe queries
- * const users = await db.query('users').where('name', '=', 'John').all();
+ * // Execute raw SQL
+ * await db.exec('INSERT INTO users (name) VALUES (?)', ['Alice']);
+ *
+ * // Query with type safety
+ * type User = { id: number; name: string };
+ * const users = await db.raw<User>('SELECT * FROM users');
  * ```
  */
-export type SQLiteClient<TSchema extends SchemaRegistry> = {
-  /**
-   * Start a SELECT query on a table with full type inference
-   *
-   * @template TTable - Name of the table to query
-   * @param table - Table name (must exist in schema)
-   * @returns QueryBuilder instance for chaining WHERE, SELECT, ORDER BY, etc.
-   *
-   * @example
-   * ```typescript
-   * // Select all columns
-   * const users = await db.query('users').all();
-   *
-   * // With conditions and projection
-   * const emails = await db.query('users')
-   *   .where('age', '>', 18)
-   *   .select(['email'])
-   *   .all();
-   * ```
-   */
-  query<TTable extends TableName<TSchema>>(
-    table: TTable
-  ): QueryBuilder<TableRow<TSchema, TTable>>;
-
-  /**
-   * Start an INSERT operation on a table with Zod validation
-   *
-   * @template TTable - Name of the table to insert into
-   * @param table - Table name (must exist in schema)
-   * @returns InsertBuilder instance for adding values
-   *
-   * @example
-   * ```typescript
-   * // Single insert
-   * await db.insert('users').values({
-   *   name: 'Alice',
-   *   email: 'alice@example.com'
-   * });
-   *
-   * // Batch insert
-   * await db.insert('users').values([
-   *   { name: 'Bob', email: 'bob@example.com' },
-   *   { name: 'Charlie', email: 'charlie@example.com' }
-   * ]);
-   * ```
-   */
-  insert<TTable extends TableName<TSchema>>(
-    table: TTable
-  ): InsertBuilder<TableRow<TSchema, TTable>>;
-
-  /**
-   * Start an UPDATE operation on a table with Zod validation
-   *
-   * @template TTable - Name of the table to update
-   * @param table - Table name (must exist in schema)
-   * @returns UpdateBuilder instance for setting values and conditions
-   *
-   * @example
-   * ```typescript
-   * await db.update('users')
-   *   .where('id', '=', 1)
-   *   .set({ name: 'Updated Name' })
-   *   .execute();
-   * ```
-   */
-  update<TTable extends TableName<TSchema>>(
-    table: TTable
-  ): UpdateBuilder<TableRow<TSchema, TTable>>;
-
-  /**
-   * Start a DELETE operation on a table
-   *
-   * @template TTable - Name of the table to delete from
-   * @param table - Table name (must exist in schema)
-   * @returns DeleteBuilder instance for adding WHERE conditions
-   *
-   * @example
-   * ```typescript
-   * await db.delete('users')
-   *   .where('id', '=', 1)
-   *   .execute();
-   * ```
-   */
-  delete<TTable extends TableName<TSchema>>(
-    table: TTable
-  ): DeleteBuilder<TableRow<TSchema, TTable>>;
-
-  /**
-   * Execute a function within an automatic transaction
-   *
-   * Automatically begins a transaction, executes the function, and commits.
-   * If the function throws an error, the transaction is automatically rolled back.
-   *
-   * @template T - Return type of the transaction function
-   * @param fn - Async function that receives a Transaction instance
-   * @returns Promise resolving to the function's return value
-   *
-   * @example
-   * ```typescript
-   * await db.transaction(async (tx) => {
-   *   await tx.insert('users').values({ name: 'Alice' });
-   *   await tx.insert('posts').values({ userId: 1, title: 'Hello' });
-   *   // Automatically commits if successful, rolls back on error
-   * });
-   * ```
-   */
-  transaction<T>(
-    fn: (tx: Transaction<TSchema>) => Promise<T>
-  ): Promise<T>;
-
-  /**
-   * Begin a manual transaction
-   *
-   * Use this when you need explicit control over commit/rollback timing.
-   * Don't forget to call commit() or rollback() when done.
-   *
-   * @returns Promise resolving to a Transaction instance
-   *
-   * @example
-   * ```typescript
-   * const tx = await db.beginTransaction();
-   * try {
-   *   await tx.insert('users').values({ name: 'Alice' });
-   *   await tx.commit();
-   * } catch (error) {
-   *   await tx.rollback();
-   *   throw error;
-   * }
-   * ```
-   */
-  beginTransaction(): Promise<Transaction<TSchema>>;
-
-  /**
-   * Notify subscribers that a table has changed
-   *
-   * Use this after mutations to trigger reactive updates in Vue components
-   * using useSQLiteQuery(). Call this after INSERT, UPDATE, or DELETE operations.
-   *
-   * @param table - Table name that changed
-   *
-   * @example
-   * ```typescript
-   * await db.insert('todos').values({ title: 'New todo' });
-   * db.notifyTable('todos'); // Triggers reactive updates
-   * ```
-   */
-  notifyTable(table: TableName<TSchema>): void;
-
-  /**
-   * Subscribe to table change notifications
-   *
-   * Register a callback to be called when notifyTable() is called for this table.
-   * Returns an unsubscribe function.
-   *
-   * @param table - Table name to watch for changes
-   * @param cb - Callback function to invoke on changes
-   * @returns Unsubscribe function to stop listening
-   *
-   * @example
-   * ```typescript
-   * const unsubscribe = db.subscribe('users', () => {
-   *   console.log('Users table changed!');
-   * });
-   *
-   * // Later, stop listening
-   * unsubscribe();
-   * ```
-   */
-  subscribe(table: TableName<TSchema>, cb: () => void): () => void;
-
+export type SQLiteClient = {
   /**
    * Execute raw SQL with parameters
    *
-   * For advanced use cases that require direct SQL execution.
+   * For INSERT, UPDATE, DELETE, and DDL statements.
    * Use parameterized queries (?) to prevent SQL injection.
    *
    * @param sql - SQL statement to execute
@@ -245,8 +53,8 @@ export type SQLiteClient<TSchema extends SchemaRegistry> = {
   /**
    * Execute raw SQL query and return typed results
    *
-   * Similar to exec() but returns result rows as typed array.
-   * Use this for SELECT queries when you need direct SQL control.
+   * For SELECT queries with type safety.
+   * Returns result rows as typed array.
    *
    * @template T - Expected row type
    * @param sql - SQL SELECT statement
@@ -255,11 +63,11 @@ export type SQLiteClient<TSchema extends SchemaRegistry> = {
    *
    * @example
    * ```typescript
+   * type User = { id: number; name: string; email: string };
+   * const users = await db.raw<User>('SELECT * FROM users WHERE age > ?', [18]);
+   *
    * type UserCount = { count: number };
-   * const result = await db.raw<UserCount>(
-   *   'SELECT COUNT(*) as count FROM users WHERE age > ?',
-   *   [18]
-   * );
+   * const result = await db.raw<UserCount>('SELECT COUNT(*) as count FROM users');
    * console.log(result[0].count);
    * ```
    */
@@ -278,7 +86,7 @@ export type SQLiteClient<TSchema extends SchemaRegistry> = {
    *
    * @example
    * ```typescript
-   * const db = await createSQLiteClient({ ... });
+   * const db = await createSQLiteClient({ filename: 'test.db' });
    * // Use database...
    * await db.close(); // Clean up resources
    * ```
@@ -292,22 +100,58 @@ export type SQLiteClient<TSchema extends SchemaRegistry> = {
    *
    * @example
    * ```typescript
-   * const db = await createSQLiteClient({ ... });
+   * const db = await createSQLiteClient({ filename: 'test.db' });
    * console.log(db.isClosed()); // false
    * await db.close();
    * console.log(db.isClosed()); // true
    * ```
    */
   isClosed(): boolean;
+
+  /**
+   * Subscribe to table change notifications
+   *
+   * Register a callback to be called when notifyTable() is called for this table.
+   * Returns an unsubscribe function. Useful for reactive UI frameworks.
+   *
+   * @param table - Table name to watch for changes
+   * @param cb - Callback function to invoke on changes
+   * @returns Unsubscribe function to stop listening
+   *
+   * @example
+   * ```typescript
+   * const unsubscribe = db.subscribe('users', () => {
+   *   console.log('Users table changed!');
+   * });
+   *
+   * // Later, stop listening
+   * unsubscribe();
+   * ```
+   */
+  subscribe(table: string, cb: () => void): () => void;
+
+  /**
+   * Notify subscribers that a table has changed
+   *
+   * Triggers all callbacks registered via subscribe() for this table.
+   * Call this after INSERT, UPDATE, or DELETE operations to enable
+   * reactive updates in UI frameworks.
+   *
+   * @param table - Table name that changed
+   *
+   * @example
+   * ```typescript
+   * await db.exec('INSERT INTO users (name) VALUES (?)', ['Alice']);
+   * db.notifyTable('users'); // Triggers reactive updates
+   * ```
+   */
+  notifyTable(table: string): void;
 };
 
 /**
  * Configuration options for creating a SQLite client
- * @template TSchema - Schema registry mapping table names to Zod schemas
  */
-type Options<TSchema extends SchemaRegistry> = {
-  /** Schema registry mapping table names to their Zod object schemas */
-  schema: TSchema;
+export type Options = {
   /** Database filename (stored in OPFS - Origin Private File System) */
   filename: string;
   /** Optional array of database migrations to run on initialization */
@@ -315,38 +159,20 @@ type Options<TSchema extends SchemaRegistry> = {
 };
 
 /**
- * Create a new SQLite client with type-safe schema validation
+ * Create a new SQLite client with WASM and OPFS storage
  *
  * Initializes a SQLite database using WASM with OPFS (Origin Private File System)
  * for persistent storage. The database is lazily initialized on the first query.
  * Migrations are automatically applied in order based on version numbers.
  *
- * @template TSchema - Schema registry mapping table names to Zod schemas
- * @param opts - Configuration options including schema, filename, and migrations
+ * @param opts - Configuration options including filename and migrations
  * @returns Promise resolving to a configured SQLiteClient instance
  *
  * @example
  * ```typescript
- * import { z } from 'zod';
  * import { createSQLiteClient } from '@alexop/sqlite-core';
  *
- * const schema = {
- *   users: z.object({
- *     id: z.number(),
- *     name: z.string(),
- *     email: z.string().email(),
- *     createdAt: z.string().optional()
- *   }),
- *   posts: z.object({
- *     id: z.number(),
- *     userId: z.number(),
- *     title: z.string(),
- *     content: z.string()
- *   })
- * } as const;
- *
  * const db = await createSQLiteClient({
- *   schema,
  *   filename: 'myapp.sqlite3',
  *   migrations: [
  *     {
@@ -375,13 +201,17 @@ type Options<TSchema extends SchemaRegistry> = {
  *   ]
  * });
  *
- * // Now you can use the client with full type safety
- * const users = await db.query('users').all();
+ * // Execute raw SQL
+ * await db.exec('INSERT INTO users (name, email) VALUES (?, ?)', ['Alice', 'alice@example.com']);
+ *
+ * // Query with types
+ * type User = { id: number; name: string; email: string };
+ * const users = await db.raw<User>('SELECT * FROM users');
  * ```
  */
-export async function createSQLiteClient<TSchema extends SchemaRegistry>(
-  opts: Options<TSchema>
-): Promise<SQLiteClient<TSchema>> {
+export async function createSQLiteClient(
+  opts: Options
+): Promise<SQLiteClient> {
   let promiser: ReturnType<typeof sqlite3Worker1Promiser> | null = null;
   let dbId: string | null = null;
   let closed = false;
@@ -559,53 +389,6 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
   }
 
   return {
-    // Query builder
-    query<TTable extends TableName<TSchema>>(table: TTable) {
-      const schema = opts.schema[table] as z.ZodObject<z.ZodRawShape>;
-      return QueryBuilder.create<TableRow<TSchema, TTable>>(executeQuery, String(table), schema);
-    },
-
-    // Insert builder
-    insert<TTable extends TableName<TSchema>>(table: TTable) {
-      const schema = opts.schema[table] as z.ZodObject<z.ZodRawShape>;
-      return new InsertBuilder(executeQuery, String(table), schema);
-    },
-
-    // Update builder
-    update<TTable extends TableName<TSchema>>(table: TTable) {
-      const schema = opts.schema[table] as z.ZodObject<z.ZodRawShape>;
-      return new UpdateBuilder(executeQuery, String(table), schema);
-    },
-
-    // Delete builder
-    delete<TTable extends TableName<TSchema>>(table: TTable) {
-      return new DeleteBuilder(executeQuery, String(table));
-    },
-
-    // Transaction support
-    async transaction<T>(fn: (tx: Transaction<TSchema>) => Promise<T>): Promise<T> {
-      await executeQuery("BEGIN TRANSACTION", []);
-      const tx = new Transaction(executeQuery, opts.schema);
-
-      try {
-        const result = await fn(tx);
-        await tx.commit();
-        return result;
-      } catch (error) {
-        await tx.rollback();
-        throw error;
-      }
-    },
-
-    async beginTransaction(): Promise<Transaction<TSchema>> {
-      await executeQuery("BEGIN TRANSACTION", []);
-      return new Transaction(executeQuery, opts.schema);
-    },
-
-    // Notifications
-    notifyTable: emit,
-    subscribe,
-
     // Raw query access
     exec,
     raw: executeQuery,
@@ -627,13 +410,13 @@ export async function createSQLiteClient<TSchema extends SchemaRegistry>(
     isClosed() {
       return closed;
     },
+
+    // Notifications
+    notifyTable: emit,
+    subscribe,
   };
 }
 
 // Re-export types and utilities
 export * from "./types";
-export * from "./zod-utils";
 export * from "./errors";
-export { QueryBuilder } from "./query-builder";
-export { InsertBuilder, UpdateBuilder, DeleteBuilder } from "./mutation-builders";
-export { Transaction } from "./transaction";

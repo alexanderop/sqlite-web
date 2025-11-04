@@ -1,7 +1,7 @@
 {
   "name": "@alexop/sqlite-vue",
   "version": "0.1.0",
-  "description": "Vue 3 plugin and composables for @alexop/sqlite-core with reactive queries",
+  "description": "Vue 3 plugin and composables for @alexop/sqlite-orm with reactive queries",
   "author": "Alexander Opalic",
   "license": "MIT",
   "type": "module",
@@ -45,7 +45,7 @@
     "vue": "^3.4.0"
   },
   "dependencies": {
-    "@alexop/sqlite-core": "workspace:*"
+    "@alexop/sqlite-orm": "workspace:*"
   },
   "devDependencies": {
     "vue": "^3.4.0",

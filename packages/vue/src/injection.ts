@@ -1,5 +1,5 @@
 import type { InjectionKey } from "vue";
-import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-core";
+import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-orm";
 
 /**
  * Vue injection key for the SQLite client promise
