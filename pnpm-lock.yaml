@@ -94,6 +94,15 @@ importers:
         specifier: ^3.50.4-build1
         version: 3.50.4-build1
 
+  packages/kysely:
+    dependencies:
+      '@alexop/sqlite-core':
+        specifier: workspace:*
+        version: link:../core
+      kysely:
+        specifier: ^0.27.0
+        version: 0.27.6
+
   packages/orm:
     dependencies:
       '@alexop/sqlite-core':
@@ -2063,6 +2072,10 @@ packages:
 
   kolorist@1.8.0:
     resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
+
+  kysely@0.27.6:
+    resolution: {integrity: sha512-FIyV/64EkKhJmjgC0g2hygpBv5RNWVPyNCqSAD7eTCv6eFWNIi4PN1UvdSJGicN/o35bnevgis4Y0UDC0qi8jQ==}
+    engines: {node: '>=14.0.0'}
 
   langium@3.3.1:
     resolution: {integrity: sha512-QJv/h939gDpvT+9SiLVlY7tZC3xB2qK57v0J04Sh9wpMb6MP1q8gB21L3WIo8T5P1MSMg3Ep14L7KkDCFG3y4w==}
@@ -5392,6 +5405,8 @@ snapshots:
   klona@2.0.6: {}
 
   kolorist@1.8.0: {}
+
+  kysely@0.27.6: {}
 
   langium@3.3.1:
     dependencies:

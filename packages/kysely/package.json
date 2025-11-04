@@ -1,0 +1,59 @@
+{
+  "name": "@alexop/sqlite-kysely",
+  "version": "0.1.0",
+  "description": "Kysely dialect for browser-based SQLite using @alexop/sqlite-core (WASM + OPFS)",
+  "author": "Alexander Opalic",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "sqlite",
+    "kysely",
+    "browser",
+    "wasm",
+    "opfs",
+    "database",
+    "sql",
+    "query-builder",
+    "type-safe",
+    "dialect"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexanderopalic/sqlite-web.git",
+    "directory": "packages/kysely"
+  },
+  "bugs": {
+    "url": "https://github.com/alexanderopalic/sqlite-web/issues"
+  },
+  "homepage": "https://github.com/alexanderopalic/sqlite-web#readme",
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "oxlint .",
+    "lint:type-aware": "oxlint --type-aware .",
+    "lint:fix": "oxlint --fix .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@alexop/sqlite-core": "workspace:*",
+    "kysely": "^0.27.0"
+  },
+  "peerDependencies": {
+    "kysely": ">=0.27.0"
+  }
+}
