@@ -317,3 +317,202 @@ describe("Table Name Type Safety", () => {
     expect(true).toBe(true);
   });
 });
+
+describe("Type Narrowing Methods - $castTo", () => {
+  it("allows casting to custom type", async () => {
+    interface UserWithProfile {
+      id: number;
+      name: string;
+      email: string;
+      profileUrl: string;
+    }
+
+    const result = await db.query("users").$castTo<UserWithProfile>().first();
+
+    expectTypeOf(result).toEqualTypeOf<UserWithProfile | null>();
+  });
+
+  it("preserves cast type through method chaining", async () => {
+    interface CustomUser {
+      id: number;
+      email: string;
+      customField: string;
+    }
+
+    const result = await db.query("users")
+      .$castTo<CustomUser>()
+      .where("id", "=", 1)
+      .orderBy("email")
+      .all();
+
+    expectTypeOf(result).toEqualTypeOf<CustomUser[]>();
+  });
+
+  it("works with first() method", async () => {
+    interface MinimalUser {
+      id: number;
+      name: string;
+    }
+
+    const result = await db.query("users").$castTo<MinimalUser>().first();
+
+    expectTypeOf(result).toEqualTypeOf<MinimalUser | null>();
+  });
+
+  it("works with count() method", async () => {
+    interface AnyType {
+      customField: string;
+    }
+
+    const result = await db.query("users").$castTo<AnyType>().count();
+
+    expectTypeOf(result).toEqualTypeOf<number>();
+  });
+});
+
+describe("Type Narrowing Methods - $notNull", () => {
+  // Schema with nullable fields
+  const schemaWithNullable = {
+    users: z.object({
+      id: z.number(),
+      name: z.string(),
+      email: z.string().nullable(),
+      age: z.number().nullable(),
+    }),
+  } as const;
+
+  type DBWithNullable = SQLiteClient<typeof schemaWithNullable>;
+  const dbNullable = {} as DBWithNullable;
+
+  it("removes null from nullable fields", async () => {
+    const result = await dbNullable.query("users")
+      .where("email", "IS NOT NULL", null)
+      .$notNull()
+      .all();
+
+    expectTypeOf(result).toEqualTypeOf<Array<{
+      id: number;
+      name: string;
+      email: string;  // null removed
+      age: number;    // null removed
+    }>>();
+  });
+
+  it("works with first() method", async () => {
+    const result = await dbNullable.query("users").$notNull().first();
+
+    expectTypeOf(result).toEqualTypeOf<{
+      id: number;
+      name: string;
+      email: string;  // null removed
+      age: number;    // null removed
+    } | null>();
+  });
+
+  it("chains with where and orderBy", async () => {
+    const result = await dbNullable.query("users")
+      .where("id", ">", 0)
+      .$notNull()
+      .orderBy("name")
+      .all();
+
+    expectTypeOf(result).toEqualTypeOf<Array<{
+      id: number;
+      name: string;
+      email: string;  // null removed
+      age: number;    // null removed
+    }>>();
+  });
+
+  it("works with select() - select after $notNull", async () => {
+    const result = await dbNullable.query("users")
+      .$notNull()
+      .select("email")
+      .all();
+
+    expectTypeOf(result).toEqualTypeOf<Array<{
+      email: string;  // null removed
+    }>>();
+  });
+});
+
+describe("Type Narrowing Methods - $narrowType", () => {
+  // Schema with nullable fields
+  const schemaWithNullable = {
+    users: z.object({
+      id: z.number(),
+      name: z.string(),
+      email: z.string().nullable(),
+      age: z.number().nullable(),
+    }),
+  } as const;
+
+  type DBWithNullable = SQLiteClient<typeof schemaWithNullable>;
+  const dbNullable = {} as DBWithNullable;
+
+  it("narrows specific fields while keeping others", async () => {
+    const result = await dbNullable.query("users")
+      .$narrowType<{ email: string }>()  // Only narrow email
+      .all();
+
+    expectTypeOf(result).toEqualTypeOf<Array<{
+      id: number;
+      name: string;
+      email: string;      // narrowed (null removed)
+      age: number | null; // unchanged (still nullable)
+    }>>();
+  });
+
+  it("narrows multiple fields", async () => {
+    const result = await dbNullable.query("users")
+      .$narrowType<{ email: string; age: number }>()  // Narrow both
+      .all();
+
+    expectTypeOf(result).toEqualTypeOf<Array<{
+      id: number;
+      name: string;
+      email: string;  // narrowed
+      age: number;    // narrowed
+    }>>();
+  });
+
+  it("works with first() method", async () => {
+    const result = await dbNullable.query("users")
+      .$narrowType<{ email: string }>()
+      .first();
+
+    expectTypeOf(result).toEqualTypeOf<{
+      id: number;
+      name: string;
+      email: string;      // narrowed
+      age: number | null; // unchanged
+    } | null>();
+  });
+
+  it("chains with where and orderBy", async () => {
+    const result = await dbNullable.query("users")
+      .where("email", "IS NOT NULL", null)
+      .$narrowType<{ email: string }>()
+      .orderBy("name")
+      .limit(10)
+      .all();
+
+    expectTypeOf(result).toEqualTypeOf<Array<{
+      id: number;
+      name: string;
+      email: string;      // narrowed
+      age: number | null; // unchanged
+    }>>();
+  });
+
+  it("works with select() - select after $narrowType", async () => {
+    const result = await dbNullable.query("users")
+      .$narrowType<{ email: string }>()
+      .select("email")
+      .all();
+
+    expectTypeOf(result).toEqualTypeOf<Array<{
+      email: string;  // narrowed from nullable
+    }>>();
+  });
+});

@@ -784,4 +784,82 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
     const results = await this.#props.executeQuery(sql, [...this.#props.whereParams]) as Array<{ count: number }>;
     return results[0]?.count || 0;
   }
+
+  /**
+   * Change the output type of the query.
+   *
+   * This method doesn't change the SQL. It simply returns a copy of this
+   * QueryBuilder with a new output type. Use when you know more about the
+   * return type than TypeScript can infer.
+   *
+   * @template T - The target type to cast to
+   * @returns QueryBuilder with cast type
+   *
+   * @example
+   * ```typescript
+   * // Cast to specific type
+   * const result = await db.query('users')
+   *   .where('id', '=', userId)
+   *   .$castTo<UserWithProfile>()
+   *   .first()
+   * ```
+   */
+  $castTo<T>(): QueryBuilder<T, TSelected extends keyof TRow ? keyof T & string : undefined> {
+    return this as unknown as QueryBuilder<T, TSelected extends keyof TRow ? keyof T & string : undefined>;
+  }
+
+  /**
+   * Omit null from the query's output type.
+   *
+   * Use when you know a field can't be null (e.g., after a NOT NULL check)
+   * but TypeScript doesn't know that.
+   *
+   * @returns QueryBuilder with non-nullable fields
+   *
+   * @example
+   * ```typescript
+   * const users = await db.query('users')
+   *   .where('email', 'IS NOT NULL', null)
+   *   .$notNull()
+   *   .all()
+   * // Now users are typed without null in nullable fields
+   * ```
+   */
+  $notNull(): QueryBuilder<{
+    [K in keyof TRow]: NonNullable<TRow[K]>
+  }, TSelected> {
+    return this as unknown as QueryBuilder<{
+      [K in keyof TRow]: NonNullable<TRow[K]>
+    }, TSelected>;
+  }
+
+  /**
+   * Narrow specific fields in the output type.
+   *
+   * @template T - Partial type with narrowed fields
+   * @returns QueryBuilder with narrowed fields
+   *
+   * @example
+   * ```typescript
+   * type Narrowed = { email: string } // Remove null
+   *
+   * const users = await db.query('users')
+   *   .where('email', 'IS NOT NULL', null)
+   *   .$narrowType<Narrowed>()
+   *   .all()
+   * ```
+   */
+  $narrowType<T extends Partial<TRow>>(): QueryBuilder<
+    {
+      [K in keyof TRow]: K extends keyof T ? T[K] : TRow[K]
+    },
+    TSelected
+  > {
+    return this as unknown as QueryBuilder<
+      {
+        [K in keyof TRow]: K extends keyof T ? T[K] : TRow[K]
+      },
+      TSelected
+    >;
+  }
 }

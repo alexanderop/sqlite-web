@@ -520,6 +520,151 @@ db.query("users").select("id", "name")
 db.query("users").select("invalid")
 ```
 
+## Type Narrowing Methods
+
+Sometimes TypeScript can't infer the exact types of your query results, even when you know them at runtime. Type narrowing methods help you provide additional type information to TypeScript without changing the SQL query.
+
+### `.$castTo<T>()`
+
+Cast the entire result type to a custom interface. Use when you know more about the result type than TypeScript can infer:
+
+```typescript
+interface UserWithProfile {
+  id: string;
+  name: string;
+  email: string;
+  profileUrl: string;
+  bio: string;
+}
+
+// Cast to custom type
+const user = await db.query("users")
+  .where("id", "=", userId)
+  .$castTo<UserWithProfile>()
+  .first();
+// Type: UserWithProfile | null
+
+// Works with all execution methods
+const users = await db.query("users")
+  .$castTo<UserWithProfile>()
+  .all();
+// Type: UserWithProfile[]
+```
+
+:::caution
+`$castTo` doesn't validate data at runtime - it only changes TypeScript's understanding of the type. Make sure your custom type matches the actual query results!
+:::
+
+### `.$notNull()`
+
+Remove `null` from all nullable fields in the result type. Use after checking for NULL values:
+
+```typescript
+const schema = {
+  users: z.object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string().nullable(),
+    age: z.number().nullable(),
+  })
+} as const;
+
+// After IS NOT NULL check, email is guaranteed non-null
+const users = await db.query("users")
+  .where("email", "IS NOT NULL", null)
+  .$notNull()
+  .all();
+// Type: Array<{ id: string, name: string, email: string, age: number }>
+// (null removed from email and age)
+
+// Without $notNull, email would be: string | null
+const usersWithNull = await db.query("users")
+  .where("email", "IS NOT NULL", null)
+  .all();
+// Type: Array<{ id: string, name: string, email: string | null, age: number | null }>
+```
+
+### `.$narrowType<T>()`
+
+Narrow specific fields while keeping others unchanged. This is the most flexible option:
+
+```typescript
+const schema = {
+  users: z.object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string().nullable(),
+    age: z.number().nullable(),
+  })
+} as const;
+
+// Only narrow the email field
+const users = await db.query("users")
+  .where("email", "IS NOT NULL", null)
+  .$narrowType<{ email: string }>()
+  .all();
+// Type: Array<{ id: string, name: string, email: string, age: number | null }>
+// email is narrowed to string, age remains nullable
+
+// Narrow multiple fields
+const activeUsers = await db.query("users")
+  .where("email", "IS NOT NULL", null)
+  .where("age", "IS NOT NULL", null)
+  .$narrowType<{ email: string; age: number }>()
+  .all();
+// Type: Array<{ id: string, name: string, email: string, age: number }>
+```
+
+### When to Use Type Narrowing
+
+**Use `$castTo` when:**
+- Joining data from multiple tables (via raw SQL)
+- Working with complex computed columns
+- The result structure differs significantly from the table schema
+
+**Use `$notNull` when:**
+- Filtering out NULL values with `IS NOT NULL`
+- You know all nullable fields are non-null
+
+**Use `$narrowType` when:**
+- You only want to narrow specific fields
+- Some nullable fields should remain nullable
+- You need fine-grained control over type narrowing
+
+### Type Narrowing with Method Chaining
+
+Type narrowing methods work seamlessly with all query builder methods:
+
+```typescript
+// Chain with where, orderBy, limit
+const results = await db.query("users")
+  .where("email", "IS NOT NULL", null)
+  .where("status", "=", "active")
+  .$notNull()
+  .orderBy("createdAt", "DESC")
+  .limit(10)
+  .all();
+
+// Use with select()
+const emails = await db.query("users")
+  .where("email", "IS NOT NULL", null)
+  .$narrowType<{ email: string }>()
+  .select("email")
+  .all();
+// Type: Array<{ email: string }>
+
+// Combine with first()
+const user = await db.query("users")
+  .where("email", "IS NOT NULL", null)
+  .$notNull()
+  .first();
+// Type: { id: string, name: string, email: string, age: number } | null
+```
+
+:::tip
+Type narrowing methods don't change the SQL query - they only affect TypeScript's type inference. Use them to provide additional type information that you know to be true at runtime.
+:::
+
 ## Advanced Patterns
 
 ### Reusable Queries
