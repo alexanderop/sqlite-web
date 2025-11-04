@@ -1,7 +1,14 @@
-import type { SQLiteClient as CoreClient, Migration } from "@alexop/sqlite-core";
+import type {
+  SQLiteClient as CoreClient,
+  Migration,
+} from "@alexop/sqlite-core";
 import type { z } from "zod";
 import { QueryBuilder } from "./query-builder";
-import { InsertBuilder, UpdateBuilder, DeleteBuilder } from "./mutation-builders";
+import {
+  InsertBuilder,
+  UpdateBuilder,
+  DeleteBuilder,
+} from "./mutation-builders";
 import { Transaction } from "./transaction";
 import type { SchemaRegistry, TableName, TableRow } from "./types";
 
@@ -142,9 +149,7 @@ export type SQLiteClient<TSchema extends SchemaRegistry> = {
    * });
    * ```
    */
-  transaction<T>(
-    fn: (tx: Transaction<TSchema>) => Promise<T>
-  ): Promise<T>;
+  transaction<T>(fn: (tx: Transaction<TSchema>) => Promise<T>): Promise<T>;
 
   /**
    * Begin a manual transaction
@@ -316,7 +321,11 @@ export function createClientWrapper<TSchema extends SchemaRegistry>(
     // Query builder
     query<TTable extends TableName<TSchema>>(table: TTable) {
       const tableSchema = schema[table] as z.ZodObject<z.ZodRawShape>;
-      return QueryBuilder.create<TableRow<TSchema, TTable>>(executeQuery, String(table), tableSchema);
+      return QueryBuilder.create<TableRow<TSchema, TTable>>(
+        executeQuery,
+        String(table),
+        tableSchema
+      );
     },
 
     // Insert builder
@@ -337,7 +346,9 @@ export function createClientWrapper<TSchema extends SchemaRegistry>(
     },
 
     // Transaction support
-    async transaction<T>(fn: (tx: Transaction<TSchema>) => Promise<T>): Promise<T> {
+    async transaction<T>(
+      fn: (tx: Transaction<TSchema>) => Promise<T>
+    ): Promise<T> {
       await executeQuery("BEGIN TRANSACTION", []);
       const tx = new Transaction(executeQuery, schema);
 

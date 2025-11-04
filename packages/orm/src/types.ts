@@ -20,7 +20,7 @@ export type TableName<TSchema extends SchemaRegistry> = keyof TSchema & string;
  */
 export type TableRow<
   TSchema extends SchemaRegistry,
-  TTable extends TableName<TSchema>
+  TTable extends TableName<TSchema>,
 > = InferSchema<TSchema[TTable]>;
 
 /**
@@ -35,5 +35,5 @@ export type SelectFields<T, K extends keyof T> = Pick<T, K>;
  */
 export type QueryResult<
   TRow,
-  TSelected extends keyof TRow | undefined
+  TSelected extends keyof TRow | undefined,
 > = TSelected extends keyof TRow ? SelectFields<TRow, TSelected> : TRow;

@@ -17,20 +17,22 @@ The reactive system uses a pub/sub pattern:
 
 ```vue
 <script setup lang="ts">
-import { useSQLiteQuery, useSQLiteClientAsync } from '@alexop/sqlite-vue';
+import { useSQLiteQuery, useSQLiteClientAsync } from "@alexop/sqlite-vue";
 
 // Subscribe to 'todos' table
 const { rows: todos } = useSQLiteQuery(
   (db) => db.query("todos").all(),
-  { tables: ["todos"] }  // Subscribe here
+  { tables: ["todos"] } // Subscribe here
 );
 
 const dbPromise = useSQLiteClientAsync();
 
 async function addTodo() {
   const db = await dbPromise;
-  await db.insert("todos").values({ /* ... */ });
-  db.notifyTable("todos");  // Notify here
+  await db.insert("todos").values({
+    /* ... */
+  });
+  db.notifyTable("todos"); // Notify here
   // todos ref automatically updates!
 }
 </script>
@@ -42,11 +44,15 @@ Complete reactive todo list:
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useSQLiteQuery, useSQLiteClientAsync } from '@alexop/sqlite-vue';
+import { ref } from "vue";
+import { useSQLiteQuery, useSQLiteClientAsync } from "@alexop/sqlite-vue";
 
 // Reactive query
-const { rows: todos, loading, error } = useSQLiteQuery(
+const {
+  rows: todos,
+  loading,
+  error,
+} = useSQLiteQuery(
   (db) => db.query("todos").orderBy("createdAt", "DESC").all(),
   { tables: ["todos"] }
 );
@@ -64,13 +70,14 @@ async function addTodo() {
     title: newTitle.value,
   });
 
-  db.notifyTable("todos");  // Triggers reactive update
+  db.notifyTable("todos"); // Triggers reactive update
   newTitle.value = "";
 }
 
 async function toggleTodo(id: string, completed: boolean) {
   const db = await dbPromise;
-  await db.update("todos")
+  await db
+    .update("todos")
     .where("id", "=", id)
     .set({ completed: !completed })
     .execute();
@@ -80,9 +87,7 @@ async function toggleTodo(id: string, completed: boolean) {
 
 async function deleteTodo(id: string) {
   const db = await dbPromise;
-  await db.delete("todos")
-    .where("id", "=", id)
-    .execute();
+  await db.delete("todos").where("id", "=", id).execute();
 
   db.notifyTable("todos");
 }
@@ -132,10 +137,9 @@ Different components can subscribe to the same table:
 ```vue
 <!-- TodoList.vue -->
 <script setup lang="ts">
-const { rows: todos } = useSQLiteQuery(
-  (db) => db.query("todos").all(),
-  { tables: ["todos"] }
-);
+const { rows: todos } = useSQLiteQuery((db) => db.query("todos").all(), {
+  tables: ["todos"],
+});
 </script>
 
 <!-- TodoStats.vue -->
@@ -143,7 +147,8 @@ const { rows: todos } = useSQLiteQuery(
 const { rows: stats } = useSQLiteQuery(
   async (db) => {
     const total = await db.query("todos").count();
-    const completed = await db.query("todos")
+    const completed = await db
+      .query("todos")
       .where("completed", "=", true)
       .count();
     return { total, completed, remaining: total - completed };
@@ -166,12 +171,12 @@ const { rows: todosWithUsers } = useSQLiteQuery(
     const todos = await db.query("todos").all();
     const users = await db.query("users").all();
 
-    return todos.map(todo => {
-      const user = users.find(u => u.id === todo.userId);
+    return todos.map((todo) => {
+      const user = users.find((u) => u.id === todo.userId);
       return { ...todo, userName: user?.name };
     });
   },
-  { tables: ["todos", "users"] }  // Subscribe to both
+  { tables: ["todos", "users"] } // Subscribe to both
 );
 </script>
 ```
@@ -187,7 +192,8 @@ interface TodoWithUser {
 }
 
 const { rows } = useSQLiteQuery(
-  (db) => db.raw<TodoWithUser>(`
+  (db) =>
+    db.raw<TodoWithUser>(`
     SELECT todos.*, users.name as userName
     FROM todos
     JOIN users ON todos.userId = users.id
@@ -204,16 +210,12 @@ Different queries on the same table:
 ```vue
 <script setup lang="ts">
 const { rows: activeTodos } = useSQLiteQuery(
-  (db) => db.query("todos")
-    .where("completed", "=", false)
-    .all(),
+  (db) => db.query("todos").where("completed", "=", false).all(),
   { tables: ["todos"] }
 );
 
 const { rows: completedTodos } = useSQLiteQuery(
-  (db) => db.query("todos")
-    .where("completed", "=", true)
-    .all(),
+  (db) => db.query("todos").where("completed", "=", true).all(),
   { tables: ["todos"] }
 );
 </script>
@@ -243,7 +245,7 @@ To make queries reactive to parameter changes, use `watch`:
 
 ```vue
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch } from "vue";
 
 const filter = ref<"all" | "active" | "completed">("all");
 
@@ -287,23 +289,22 @@ Update UI immediately, then sync to database:
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from "vue";
 
-const { rows: todos } = useSQLiteQuery(
-  (db) => db.query("todos").all(),
-  { tables: ["todos"] }
-);
+const { rows: todos } = useSQLiteQuery((db) => db.query("todos").all(), {
+  tables: ["todos"],
+});
 
 const dbPromise = useSQLiteClientAsync();
 
 async function toggleTodo(id: string) {
   // Find the todo
-  const todo = todos.value?.find(t => t.id === id);
+  const todo = todos.value?.find((t) => t.id === id);
   if (!todo) return;
 
   // 1. Optimistic update (immediate UI feedback)
   if (todos.value) {
-    todos.value = todos.value.map(t =>
+    todos.value = todos.value.map((t) =>
       t.id === id ? { ...t, completed: !t.completed } : t
     );
   }
@@ -311,7 +312,8 @@ async function toggleTodo(id: string) {
   // 2. Update database
   try {
     const db = await dbPromise;
-    await db.update("todos")
+    await db
+      .update("todos")
       .where("id", "=", id)
       .set({ completed: !todo.completed })
       .execute();
@@ -345,9 +347,7 @@ async function forceRefresh() {
 
 <template>
   <div>
-    <button @click="forceRefresh" :disabled="loading">
-      Refresh
-    </button>
+    <button @click="forceRefresh" :disabled="loading">Refresh</button>
 
     <ul>
       <li v-for="todo in rows" :key="todo.id">
@@ -376,9 +376,7 @@ async function loadTodos() {
 
 <template>
   <div>
-    <button v-if="!rows" @click="loadTodos">
-      Load Todos
-    </button>
+    <button v-if="!rows" @click="loadTodos">Load Todos</button>
 
     <div v-if="loading">Loading...</div>
     <ul v-else-if="rows">
@@ -396,24 +394,25 @@ Implement pagination with reactive queries:
 
 ```vue
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch } from "vue";
 
 const page = ref(0);
 const pageSize = 20;
 
 const { rows, loading, refresh } = useSQLiteQuery(
-  (db) => db.query("todos")
-    .orderBy("createdAt", "DESC")
-    .skip(page.value * pageSize)
-    .limit(pageSize)
-    .all(),
+  (db) =>
+    db
+      .query("todos")
+      .orderBy("createdAt", "DESC")
+      .skip(page.value * pageSize)
+      .limit(pageSize)
+      .all(),
   { tables: ["todos"] }
 );
 
-const { rows: totalCount } = useSQLiteQuery(
-  (db) => db.query("todos").count(),
-  { tables: ["todos"] }
-);
+const { rows: totalCount } = useSQLiteQuery((db) => db.query("todos").count(), {
+  tables: ["todos"],
+});
 
 const totalPages = computed(() =>
   Math.ceil((totalCount.value ?? 0) / pageSize)
@@ -431,17 +430,11 @@ watch(page, () => refresh());
     </ul>
 
     <div>
-      <button
-        @click="page--"
-        :disabled="page === 0 || loading"
-      >
+      <button @click="page--" :disabled="page === 0 || loading">
         Previous
       </button>
       <span>Page {{ page + 1 }} of {{ totalPages }}</span>
-      <button
-        @click="page++"
-        :disabled="page >= totalPages - 1 || loading"
-      >
+      <button @click="page++" :disabled="page >= totalPages - 1 || loading">
         Next
       </button>
     </div>
@@ -455,19 +448,18 @@ Use computed values for derived data:
 
 ```vue
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from "vue";
 
-const { rows: todos } = useSQLiteQuery(
-  (db) => db.query("todos").all(),
-  { tables: ["todos"] }
+const { rows: todos } = useSQLiteQuery((db) => db.query("todos").all(), {
+  tables: ["todos"],
+});
+
+const activeTodos = computed(
+  () => todos.value?.filter((t) => !t.completed) ?? []
 );
 
-const activeTodos = computed(() =>
-  todos.value?.filter(t => !t.completed) ?? []
-);
-
-const completedTodos = computed(() =>
-  todos.value?.filter(t => t.completed) ?? []
+const completedTodos = computed(
+  () => todos.value?.filter((t) => t.completed) ?? []
 );
 
 const stats = computed(() => ({
@@ -510,14 +502,10 @@ When making multiple changes:
 ```typescript
 async function clearCompleted() {
   const db = await dbPromise;
-  const completed = await db.query("todos")
-    .where("completed", "=", true)
-    .all();
+  const completed = await db.query("todos").where("completed", "=", true).all();
 
   for (const todo of completed) {
-    await db.delete("todos")
-      .where("id", "=", todo.id)
-      .execute();
+    await db.delete("todos").where("id", "=", todo.id).execute();
     // Don't notify here
   }
 
@@ -532,15 +520,14 @@ Only subscribe to tables you actually use:
 
 ```typescript
 // ✅ Good - only subscribes to 'todos'
-const { rows } = useSQLiteQuery(
-  (db) => db.query("todos").all(),
-  { tables: ["todos"] }
-);
+const { rows } = useSQLiteQuery((db) => db.query("todos").all(), {
+  tables: ["todos"],
+});
 
 // ❌ Bad - subscribes to all tables (unnecessary re-runs)
 const { rows } = useSQLiteQuery(
   (db) => db.query("todos").all(),
-  { tables: ["todos", "users", "posts"] }  // Too many!
+  { tables: ["todos", "users", "posts"] } // Too many!
 );
 ```
 

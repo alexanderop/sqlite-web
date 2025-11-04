@@ -13,8 +13,8 @@ Returns a promise that resolves to the SQLite client. Use this for mutations and
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useSQLiteClientAsync } from '@alexop/sqlite-vue';
+import { ref } from "vue";
+import { useSQLiteClientAsync } from "@alexop/sqlite-vue";
 
 const dbPromise = useSQLiteClientAsync();
 const newTitle = ref("");
@@ -98,18 +98,13 @@ async function createTodo(title: string) {
 
 async function updateTodo(id: string, completed: boolean) {
   const db = await dbPromise;
-  await db.update("todos")
-    .where("id", "=", id)
-    .set({ completed })
-    .execute();
+  await db.update("todos").where("id", "=", id).set({ completed }).execute();
   db.notifyTable("todos");
 }
 
 async function deleteTodo(id: string) {
   const db = await dbPromise;
-  await db.delete("todos")
-    .where("id", "=", id)
-    .execute();
+  await db.delete("todos").where("id", "=", id).execute();
   db.notifyTable("todos");
 }
 ```
@@ -122,9 +117,13 @@ Returns reactive query results that automatically update when data changes.
 
 ```vue
 <script setup lang="ts">
-import { useSQLiteQuery } from '@alexop/sqlite-vue';
+import { useSQLiteQuery } from "@alexop/sqlite-vue";
 
-const { rows: todos, loading, error } = useSQLiteQuery(
+const {
+  rows: todos,
+  loading,
+  error,
+} = useSQLiteQuery(
   (db) => db.query("todos").orderBy("createdAt", "DESC").all(),
   { tables: ["todos"] }
 );
@@ -155,7 +154,7 @@ function useSQLiteQuery<T>(
   loading: Ref<boolean>;
   error: Ref<Error | null>;
   refresh: () => Promise<void>;
-}
+};
 ```
 
 - **`queryFn`** - Function that receives the DB client and returns a query result
@@ -175,9 +174,7 @@ Specify which tables to watch for changes:
 
 ```typescript
 const { rows } = useSQLiteQuery(
-  (db) => db.query("todos")
-    .where("userId", "=", currentUserId.value)
-    .all(),
+  (db) => db.query("todos").where("userId", "=", currentUserId.value).all(),
   { tables: ["todos"] }
 );
 
@@ -188,7 +185,8 @@ Multiple tables:
 
 ```typescript
 const { rows } = useSQLiteQuery(
-  (db) => db.raw(`
+  (db) =>
+    db.raw(`
     SELECT todos.*, users.name as userName
     FROM todos
     JOIN users ON todos.userId = users.id
@@ -202,10 +200,9 @@ const { rows } = useSQLiteQuery(
 Use the `refresh()` function to manually re-run the query:
 
 ```typescript
-const { rows, refresh } = useSQLiteQuery(
-  (db) => db.query("todos").all(),
-  { tables: ["todos"] }
-);
+const { rows, refresh } = useSQLiteQuery((db) => db.query("todos").all(), {
+  tables: ["todos"],
+});
 
 async function forceRefresh() {
   await refresh();
@@ -218,16 +215,14 @@ Control when the query first runs:
 
 ```typescript
 // Runs immediately on mount (default)
-const { rows } = useSQLiteQuery(
-  (db) => db.query("todos").all(),
-  { immediate: true }
-);
+const { rows } = useSQLiteQuery((db) => db.query("todos").all(), {
+  immediate: true,
+});
 
 // Waits for manual refresh
-const { rows, refresh } = useSQLiteQuery(
-  (db) => db.query("todos").all(),
-  { immediate: false }
-);
+const { rows, refresh } = useSQLiteQuery((db) => db.query("todos").all(), {
+  immediate: false,
+});
 
 // Later...
 await refresh();
@@ -239,13 +234,15 @@ Use the full query builder API:
 
 ```typescript
 const { rows: completedTodos } = useSQLiteQuery(
-  (db) => db.query("todos")
-    .where("completed", "=", true)
-    .where("deletedAt", "=", null)
-    .orderBy("createdAt", "DESC")
-    .limit(50)
-    .select("id", "title", "createdAt")
-    .all(),
+  (db) =>
+    db
+      .query("todos")
+      .where("completed", "=", true)
+      .where("deletedAt", "=", null)
+      .orderBy("createdAt", "DESC")
+      .limit(50)
+      .select("id", "title", "createdAt")
+      .all(),
   { tables: ["todos"] }
 );
 // Type: Ref<Array<{ id: string, title: string, createdAt: string }> | null>
@@ -256,7 +253,7 @@ const { rows: completedTodos } = useSQLiteQuery(
 Queries don't automatically re-run when reactive values change. Use `watch` or `computed`:
 
 ```typescript
-import { ref, watch } from 'vue';
+import { ref, watch } from "vue";
 
 const filter = ref<"all" | "active" | "completed">("all");
 
@@ -312,11 +309,15 @@ Use both composables together:
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useSQLiteQuery, useSQLiteClientAsync } from '@alexop/sqlite-vue';
+import { ref } from "vue";
+import { useSQLiteQuery, useSQLiteClientAsync } from "@alexop/sqlite-vue";
 
 // Query
-const { rows: todos, loading, error } = useSQLiteQuery(
+const {
+  rows: todos,
+  loading,
+  error,
+} = useSQLiteQuery(
   (db) => db.query("todos").orderBy("createdAt", "DESC").all(),
   { tables: ["todos"] }
 );
@@ -337,7 +338,8 @@ async function addTodo() {
 
 async function toggleTodo(id: string, completed: boolean) {
   const db = await dbPromise;
-  await db.update("todos")
+  await db
+    .update("todos")
     .where("id", "=", id)
     .set({ completed: !completed })
     .execute();
@@ -346,9 +348,7 @@ async function toggleTodo(id: string, completed: boolean) {
 
 async function deleteTodo(id: string) {
   const db = await dbPromise;
-  await db.delete("todos")
-    .where("id", "=", id)
-    .execute();
+  await db.delete("todos").where("id", "=", id).execute();
   db.notifyTable("todos");
 }
 </script>
@@ -381,12 +381,11 @@ Both composables handle errors gracefully:
 
 ```vue
 <script setup lang="ts">
-import { useSQLiteQuery, useSQLiteClientAsync } from '@alexop/sqlite-vue';
+import { useSQLiteQuery, useSQLiteClientAsync } from "@alexop/sqlite-vue";
 
-const { error: queryError } = useSQLiteQuery(
-  (db) => db.query("todos").all(),
-  { tables: ["todos"] }
-);
+const { error: queryError } = useSQLiteQuery((db) => db.query("todos").all(), {
+  tables: ["todos"],
+});
 
 const dbPromise = useSQLiteClientAsync();
 const mutationError = ref<Error | null>(null);
@@ -395,7 +394,9 @@ async function addTodo() {
   try {
     mutationError.value = null;
     const db = await dbPromise;
-    await db.insert("todos").values({ /* ... */ });
+    await db.insert("todos").values({
+      /* ... */
+    });
     db.notifyTable("todos");
   } catch (err) {
     mutationError.value = err as Error;

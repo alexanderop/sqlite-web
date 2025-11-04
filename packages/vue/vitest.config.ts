@@ -5,15 +5,21 @@ import { playwright } from "@vitest/browser-playwright";
 export default defineConfig({
   optimizeDeps: {
     exclude: ["@sqlite.org/sqlite-wasm"],
-  }, plugins: [vue()], server: {
+  },
+  plugins: [vue()],
+  server: {
     headers: {
-      "Cross-Origin-Embedder-Policy": "require-corp", "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
     },
-  }, test: {
+  },
+  test: {
     globals: true,
     // Browser tests for Vue composables
     browser: {
-      enabled: true, instances: [{ browser: "chromium" }], provider: playwright({
+      enabled: true,
+      instances: [{ browser: "chromium" }],
+      provider: playwright({
         launch: {
           headless: true,
         },

@@ -14,13 +14,17 @@ export default defineWorkspace([
   {
     extends: "./packages/core/vitest.config.ts",
     test: {
-      exclude: ["packages/core/src/**/*.test-d.ts"], include: ["packages/core/src/**/*.{test,spec}.ts"], name: "core-browser",
+      exclude: ["packages/core/src/**/*.test-d.ts"],
+      include: ["packages/core/src/**/*.{test,spec}.ts"],
+      name: "core-browser",
     },
   },
   {
     extends: "./packages/vue/vitest.config.ts",
     test: {
-      exclude: ["packages/vue/src/**/*.test-d.ts"], include: ["packages/vue/src/**/*.{test,spec}.ts"], name: "vue-browser",
+      exclude: ["packages/vue/src/**/*.test-d.ts"],
+      include: ["packages/vue/src/**/*.{test,spec}.ts"],
+      name: "vue-browser",
     },
   },
 ]);

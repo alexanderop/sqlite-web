@@ -209,9 +209,7 @@ export type Options = {
  * const users = await db.raw<User>('SELECT * FROM users');
  * ```
  */
-export async function createSQLiteClient(
-  opts: Options
-): Promise<SQLiteClient> {
+export async function createSQLiteClient(opts: Options): Promise<SQLiteClient> {
   let promiser: ReturnType<typeof sqlite3Worker1Promiser> | null = null;
   let dbId: string | null = null;
   let closed = false;
@@ -225,8 +223,12 @@ export async function createSQLiteClient(
    */
   function emit(table: string) {
     const set = emitter.get(table);
-    if (!set) {return;}
-    for (const cb of set) {cb();}
+    if (!set) {
+      return;
+    }
+    for (const cb of set) {
+      cb();
+    }
   }
 
   /**
@@ -237,12 +239,18 @@ export async function createSQLiteClient(
    * @internal
    */
   function subscribe(table: string, cb: () => void) {
-    if (!emitter.has(table)) {emitter.set(table, new Set());}
+    if (!emitter.has(table)) {
+      emitter.set(table, new Set());
+    }
     const tableSet = emitter.get(table);
-    if (tableSet) {tableSet.add(cb);}
+    if (tableSet) {
+      tableSet.add(cb);
+    }
     return () => {
       const tableSet = emitter.get(table);
-      if (tableSet) {tableSet.delete(cb);}
+      if (tableSet) {
+        tableSet.delete(cb);
+      }
     };
   }
 
@@ -252,7 +260,9 @@ export async function createSQLiteClient(
    * @internal
    */
   async function init() {
-    if (promiser && dbId) {return;}
+    if (promiser && dbId) {
+      return;
+    }
 
     promiser = await new Promise((resolve) => {
       const p = sqlite3Worker1Promiser({
@@ -269,7 +279,9 @@ export async function createSQLiteClient(
     });
 
     if (openResponse.type === "error") {
-      throw new Error(openResponse.result?.message || "Failed to open database");
+      throw new Error(
+        openResponse.result?.message || "Failed to open database"
+      );
     }
 
     if (!openResponse.result?.dbId) {
@@ -292,16 +304,23 @@ export async function createSQLiteClient(
 
       // Get already applied migrations
       const appliedResult = await promiser("exec", {
-        dbId, returnValue: "resultRows", rowMode: "object", sql: "SELECT version FROM __migrations__ ORDER BY version",
+        dbId,
+        returnValue: "resultRows",
+        rowMode: "object",
+        sql: "SELECT version FROM __migrations__ ORDER BY version",
       });
 
       const appliedVersions = new Set(
-        (appliedResult.result?.resultRows ?? []).map((row) => (row as { version: number }).version)
+        (appliedResult.result?.resultRows ?? []).map(
+          (row) => (row as { version: number }).version
+        )
       );
 
       // Run pending migrations in order
       // eslint-disable-next-line unicorn/no-array-sort
-      const ordered = [...opts.migrations].sort((a, b) => a.version - b.version);
+      const ordered = [...opts.migrations].sort(
+        (a, b) => a.version - b.version
+      );
       for (const mig of ordered) {
         if (!appliedVersions.has(mig.version)) {
           // eslint-disable-next-line no-await-in-loop
@@ -313,7 +332,9 @@ export async function createSQLiteClient(
           // Record migration as applied
           // eslint-disable-next-line no-await-in-loop
           await promiser("exec", {
-            bind: [mig.version], dbId, sql: "INSERT INTO __migrations__ (version) VALUES (?)",
+            bind: [mig.version],
+            dbId,
+            sql: "INSERT INTO __migrations__ (version) VALUES (?)",
           });
         }
       }
@@ -343,11 +364,18 @@ export async function createSQLiteClient(
 
     try {
       const result = await promiser("exec", {
-        bind: params, dbId, returnValue: "resultRows", rowMode: "object", sql,
+        bind: params,
+        dbId,
+        returnValue: "resultRows",
+        rowMode: "object",
+        sql,
       });
 
       // Check for errors in the result (in case promiser resolves with error)
-      if (result.type === "error" || (result.result as unknown as { errorClass?: string })?.errorClass) {
+      if (
+        result.type === "error" ||
+        (result.result as unknown as { errorClass?: string })?.errorClass
+      ) {
         const message = result.result?.message || "Query failed";
         throw parseSQLiteError(message, sql);
       }
@@ -355,7 +383,10 @@ export async function createSQLiteClient(
       return result;
     } catch (error: unknown) {
       // Promiser rejected - check if it's an error object from SQLite
-      const err = error as { type?: string; result?: { errorClass?: string; message?: string } };
+      const err = error as {
+        type?: string;
+        result?: { errorClass?: string; message?: string };
+      };
       if (err?.type === "error" || err?.result?.errorClass) {
         const message = err.result?.message || "Query failed";
         throw parseSQLiteError(message, sql);
@@ -395,7 +426,9 @@ export async function createSQLiteClient(
 
     // Resource management
     async close() {
-      if (closed) {return;} // Idempotent - safe to call multiple times
+      if (closed) {
+        return;
+      } // Idempotent - safe to call multiple times
 
       if (promiser && dbId) {
         await promiser("close", { dbId });

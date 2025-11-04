@@ -47,6 +47,7 @@ This document outlines the feature roadmap for SQLite Web, a browser-based SQLit
 **Goal**: Production-ready library with essential features for most use cases.
 
 **Progress**: 6 of 7 critical/important features completed (86% done!)
+
 - ✅ Transactions (auto-commit/rollback)
 - ✅ Batch operations
 - ✅ Database cleanup/close
@@ -58,6 +59,7 @@ This document outlines the feature roadmap for SQLite Web, a browser-based SQLit
 ### Critical Features (MUST HAVE)
 
 #### 1. Transaction Support ✅ COMPLETED
+
 **Status**: ✅ Implemented
 **Priority**: CRITICAL
 
@@ -84,6 +86,7 @@ try {
 ---
 
 #### 2. Batch Operations ✅ COMPLETED
+
 **Status**: ✅ Implemented
 **Priority**: CRITICAL
 
@@ -92,11 +95,12 @@ try {
 await db.insert("todos").values([
   { id: "1", title: "First", completed: false },
   { id: "2", title: "Second", completed: false },
-  { id: "3", title: "Third", completed: true }
+  { id: "3", title: "Third", completed: true },
 ]);
 
 // Batch updates
-await db.update("todos")
+await db
+  .update("todos")
   .where("completed", "=", false)
   .set({ completed: true })
   .execute(); // Already works, just document it
@@ -107,6 +111,7 @@ await db.update("todos")
 ---
 
 #### 3. Database Cleanup/Close ✅ COMPLETED
+
 **Status**: ✅ Implemented
 **Priority**: CRITICAL
 
@@ -123,6 +128,7 @@ db.isClosed(); // boolean
 ---
 
 #### 4. Advanced WHERE Conditions ✅ COMPLETED
+
 **Status**: ✅ Implemented (OR, IN, NOT IN, LIKE, IS NULL, IS NOT NULL, BETWEEN, AND/OR grouping)
 **Priority**: HIGH
 
@@ -134,35 +140,24 @@ db.query("todos")
   .all();
 
 // IN operator
-db.query("users")
-  .where("id", "in", ["1", "2", "3"])
-  .all();
+db.query("users").where("id", "in", ["1", "2", "3"]).all();
 
 // NOT IN
-db.query("posts")
-  .where("status", "not in", ["deleted", "spam"])
-  .all();
+db.query("posts").where("status", "not in", ["deleted", "spam"]).all();
 
 // LIKE operator
-db.query("todos")
-  .where("title", "like", "%urgent%")
-  .all();
+db.query("todos").where("title", "like", "%urgent%").all();
 
 // IS NULL / IS NOT NULL
-db.query("users")
-  .where("deletedAt", "is null")
-  .all();
+db.query("users").where("deletedAt", "is null").all();
 
 // BETWEEN
-db.query("orders")
-  .where("createdAt", "between", [startDate, endDate])
-  .all();
+db.query("orders").where("createdAt", "between", [startDate, endDate]).all();
 
 // Complex conditions with AND/OR grouping
 db.query("todos")
   .where((qb) =>
-    qb.where("status", "=", "pending")
-      .orWhere("priority", "=", "high")
+    qb.where("status", "=", "pending").orWhere("priority", "=", "high")
   )
   .where("userId", "=", currentUserId)
   .all();
@@ -173,6 +168,7 @@ db.query("todos")
 ---
 
 #### 5. Better Error Handling ✅ COMPLETED
+
 **Status**: ✅ Implemented (SQLiteError, ValidationError, ConstraintError)
 **Priority**: HIGH
 
@@ -209,25 +205,26 @@ try {
 ### Important Features (SHOULD HAVE)
 
 #### 6. Aggregation Functions ✅ COMPLETED
+
 **Status**: ✅ Implemented (SUM, AVG, MIN, MAX, GROUP BY)
 **Priority**: MEDIUM
 
 ```typescript
 // SUM
-const total = await db.query("orders")
+const total = await db
+  .query("orders")
   .where("userId", "=", "123")
   .sum("amount");
 
 // AVG
-const average = await db.query("ratings")
-  .avg("score");
+const average = await db.query("ratings").avg("score");
 
 // MIN/MAX
-const oldest = await db.query("users")
-  .min("createdAt");
+const oldest = await db.query("users").min("createdAt");
 
 // GROUP BY with aggregates
-const userTotals = await db.query("orders")
+const userTotals = await db
+  .query("orders")
   .select("userId")
   .groupBy("userId")
   .sum("amount", "total")
@@ -240,10 +237,12 @@ const userTotals = await db.query("orders")
 ---
 
 #### 7. Basic JOIN Support
+
 **Status**: Not implemented
 **Priority**: MEDIUM
 
 **Type Safety Requirements**:
+
 - Full TypeScript autocomplete for table names in join clauses
 - Autocomplete for column names from both joined tables
 - Type inference for joined result types
@@ -251,20 +250,23 @@ const userTotals = await db.query("orders")
 
 ```typescript
 // INNER JOIN
-const posts = await db.query("posts")
+const posts = await db
+  .query("posts")
   .join("users", "posts.userId", "users.id") // Autocomplete for tables & columns
   .select("posts.title", "users.name") // Autocomplete knows about both tables
   .all();
 // Type: { title: string, name: string }[]
 
 // LEFT JOIN
-const todos = await db.query("todos")
+const todos = await db
+  .query("todos")
   .leftJoin("users", "todos.assignedTo", "users.id")
   .select("todos.title", "users.name")
   .all();
 
 // Multiple joins
-const data = await db.query("posts")
+const data = await db
+  .query("posts")
   .join("users", "posts.userId", "users.id")
   .leftJoin("comments", "posts.id", "comments.postId")
   .all();
@@ -277,23 +279,24 @@ const data = await db.query("posts")
 ### Nice-to-Have Features (COULD HAVE)
 
 #### 8. Query Debugging
+
 **Status**: Not implemented
 **Priority**: LOW
 
 **Type Safety Requirements**:
+
 - Fully typed return values from `toSQL()` method
 - Type-safe params array
 
 ```typescript
 // See generated SQL without executing
-const sql = db.query("todos")
-  .where("completed", "=", false)
-  .toSQL();
+const sql = db.query("todos").where("completed", "=", false).toSQL();
 // Returns: { sql: "SELECT * FROM todos WHERE completed = ?", params: [false] }
 // Type: { sql: string, params: unknown[] }
 
 // Explain query plan
-const plan = await db.query("todos")
+const plan = await db
+  .query("todos")
   .where("title", "like", "%urgent%")
   .explain();
 ```
@@ -303,10 +306,12 @@ const plan = await db.query("todos")
 ---
 
 #### 9. Index Management
+
 **Status**: Manual via migrations
 **Priority**: LOW
 
 **Type Safety Requirements**:
+
 - Autocomplete for table names in `createIndex()` and `dropIndex()`
 - Autocomplete for column names from the specified table
 - Type-safe validation that columns exist in the table schema
@@ -329,10 +334,12 @@ const indexes = await db.getIndexes("todos"); // Table name has autocomplete
 ---
 
 #### 10. Schema Introspection
+
 **Status**: Not implemented
 **Priority**: LOW
 
 **Type Safety Requirements**:
+
 - Autocomplete for table names in `getTableSchema()`
 - Fully typed return values with proper type inference
 - Type-safe table names array from `getTables()`
@@ -352,6 +359,7 @@ const tables = await db.getTables();
 ---
 
 #### 11. Migration Rollback
+
 **Status**: Only forward migrations
 **Priority**: LOW
 
@@ -361,8 +369,8 @@ const migrations = [
   {
     version: 1,
     up: "CREATE TABLE users (...)",
-    down: "DROP TABLE users"
-  }
+    down: "DROP TABLE users",
+  },
 ];
 
 // Rollback to version
@@ -380,6 +388,7 @@ Features deferred to future releases:
 **Note**: All features in future versions must maintain full TypeScript type safety with autocomplete support wherever possible.
 
 ### v0.2.0 (Enhanced Querying)
+
 - Full JOIN support (RIGHT JOIN, CROSS JOIN, self-joins) - with full type inference
 - Subqueries and CTEs (Common Table Expressions) - with type-safe column references
 - HAVING clause for grouped queries - with autocomplete for aggregate columns
@@ -387,6 +396,7 @@ Features deferred to future releases:
 - UNION/INTERSECT/EXCEPT operations - with type-safe combining of compatible result types
 
 ### v0.3.0 (Advanced Features)
+
 - Connection pooling (multiple workers)
 - Query result streaming for large datasets
 - Full-text search (FTS5 extension)
@@ -394,12 +404,14 @@ Features deferred to future releases:
 - Prepared statements caching
 
 ### v0.4.0 (Framework Integrations)
+
 - **Automatic Vue Reactivity** - Eliminate manual `db.notifyTable()` calls by detecting mutations automatically
 - React hooks package (`@alexop/sqlite-react`)
 - Svelte stores package (`@alexop/sqlite-svelte`)
 - Solid.js signals package (`@alexop/sqlite-solid`)
 
 ### v0.5.0 (Developer Experience)
+
 - DevTools browser extension
 - Query performance monitoring
 - Migration generator CLI
@@ -410,6 +422,7 @@ Features deferred to future releases:
 ## 📦 Pre-Release Checklist for v0.1.0
 
 ### Features
+
 - [x] Transactions (auto-commit/rollback) ✅
 - [x] Batch insert operations ✅
 - [x] Advanced WHERE (OR, IN, LIKE, IS NULL, BETWEEN) ✅
@@ -419,6 +432,7 @@ Features deferred to future releases:
 - [ ] Basic JOIN support (INNER, LEFT)
 
 ### Testing
+
 - [ ] Test coverage >80%
 - [x] Transaction tests (commit, rollback, nested) ✅
 - [x] Batch operation tests ✅
@@ -429,6 +443,7 @@ Features deferred to future releases:
 - [ ] Performance benchmarks (1k, 10k, 100k rows)
 
 ### Documentation
+
 - [ ] README updates with installation and quick start
 - [ ] API reference documentation
 - [ ] Migration guide
@@ -440,6 +455,7 @@ Features deferred to future releases:
 - [ ] LICENSE file (MIT)
 
 ### Repository
+
 - [ ] GitHub issue templates
 - [ ] Contributing guidelines
 - [ ] Code of conduct
@@ -448,12 +464,14 @@ Features deferred to future releases:
 - [ ] Automated documentation deployment
 
 ### Examples
+
 - [ ] Todo app (already exists)
 - [ ] Multi-user blog example
 - [ ] E-commerce cart example
 - [ ] Real-time collaboration example
 
 ### Package Quality
+
 - [ ] Bundle size analysis
 - [ ] Tree-shaking verification
 - [x] TypeScript strict mode enabled ✅

@@ -16,7 +16,10 @@ import type { SQLiteClient } from "@alexop/sqlite-orm";
 
 // Define test schema (same as in example app)
 const todoSchema = z.object({
-  completed: z.boolean(), createdAt: z.string(), id: z.string(), title: z.string(),
+  completed: z.boolean(),
+  createdAt: z.string(),
+  id: z.string(),
+  title: z.string(),
 });
 
 const testSchema = {
@@ -24,7 +27,8 @@ const testSchema = {
 } as const;
 
 // Create typed composables
-const { useSQLiteClientAsync, useSQLiteQuery } = createTypedComposables<typeof testSchema>();
+const { useSQLiteClientAsync, useSQLiteQuery } =
+  createTypedComposables<typeof testSchema>();
 
 // Mock the client for type testing
 declare const db: SQLiteClient<typeof testSchema>;
@@ -75,8 +79,8 @@ describe("Vue Composables - Type Safety", () => {
 
   it("useSQLiteQuery infers correct return types", () => {
     // Query function parameter should be properly typed
-    const queryResult = useSQLiteQuery(
-      (db) => db.query("todos").where("completed", "=", false).all()
+    const queryResult = useSQLiteQuery((db) =>
+      db.query("todos").where("completed", "=", false).all()
     );
 
     // Verify return object has expected properties
@@ -100,13 +104,13 @@ describe("Vue Composables - Real World Usage", () => {
     // Simulating what you'd write in a Vue component
 
     // ✅ SELECT with type safety
-    const selectQuery = useSQLiteQuery(
-      (db) => db.query("todos").orderBy("createdAt", "DESC").all()
+    const selectQuery = useSQLiteQuery((db) =>
+      db.query("todos").orderBy("createdAt", "DESC").all()
     );
 
     // ✅ SELECT with WHERE
-    const filteredQuery = useSQLiteQuery(
-      (db) => db.query("todos").where("completed", "=", false).all()
+    const filteredQuery = useSQLiteQuery((db) =>
+      db.query("todos").where("completed", "=", false).all()
     );
 
     // All should compile

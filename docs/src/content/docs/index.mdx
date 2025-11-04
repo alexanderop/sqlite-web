@@ -16,19 +16,22 @@ hero:
       icon: external
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Card, CardGrid } from "@astrojs/starlight/components";
 
 ## Features
 
 <CardGrid stagger>
   <Card title="Type-Safe Query Builder" icon="pencil">
-    Full TypeScript support with compile-time type checking for tables, columns, and values. Autocomplete everywhere.
+    Full TypeScript support with compile-time type checking for tables, columns,
+    and values. Autocomplete everywhere.
   </Card>
   <Card title="Zod Schema Validation" icon="approve-check">
-    Define your database schema with Zod and get automatic runtime validation on all mutations.
+    Define your database schema with Zod and get automatic runtime validation on
+    all mutations.
   </Card>
   <Card title="OPFS Persistence" icon="document">
-    Data persists across browser sessions using Origin Private File System (OPFS) with SQLite WASM.
+    Data persists across browser sessions using Origin Private File System
+    (OPFS) with SQLite WASM.
   </Card>
   <Card title="Reactive Vue Integration" icon="random">
     Built-in Vue composables with automatic query updates when data changes.
@@ -54,26 +57,29 @@ const schema = {
     title: z.string(),
     completed: z.boolean().default(false),
     createdAt: z.string().default(() => new Date().toISOString()),
-  })
+  }),
 } as const;
 
 // Create client
 const db = await createSQLiteClient({
   schema,
   filename: "file:app.sqlite3?vfs=opfs",
-  migrations: [{
-    version: 1,
-    sql: `CREATE TABLE todos (
+  migrations: [
+    {
+      version: 1,
+      sql: `CREATE TABLE todos (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
       completed INTEGER DEFAULT 0,
       createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-    )`
-  }]
+    )`,
+    },
+  ],
 });
 
 // Query with full type safety
-const todos = await db.query("todos")
+const todos = await db
+  .query("todos")
   .where("completed", "=", false)
   .orderBy("createdAt", "DESC")
   .all();
@@ -104,10 +110,10 @@ export default {
   server: {
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "require-corp"
-    }
-  }
-}
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
+  },
+};
 ```
 
 See the [Browser Setup](/guides/browser-setup/) guide for complete configuration details.

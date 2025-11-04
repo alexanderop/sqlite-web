@@ -27,7 +27,9 @@ describe("Migrations", () => {
     });
 
     await db.exec("INSERT INTO todos (id, title) VALUES (?, ?)", ["1", "Test"]);
-    const result = await db.raw<{ id: string; title: string }>("SELECT * FROM todos");
+    const result = await db.raw<{ id: string; title: string }>(
+      "SELECT * FROM todos"
+    );
     expect(result).toHaveLength(1);
     await db.close();
   });
@@ -46,7 +48,10 @@ describe("Migrations", () => {
       ],
     });
 
-    await db1.exec("INSERT INTO todos (id, title) VALUES (?, ?)", ["1", "First"]);
+    await db1.exec("INSERT INTO todos (id, title) VALUES (?, ?)", [
+      "1",
+      "First",
+    ]);
     await db1.close();
 
     // Second client - should skip migration
@@ -60,7 +65,9 @@ describe("Migrations", () => {
       ],
     });
 
-    const result = await db2.raw<{ id: string; title: string }>("SELECT * FROM todos");
+    const result = await db2.raw<{ id: string; title: string }>(
+      "SELECT * FROM todos"
+    );
     expect(result).toHaveLength(1);
     expect(result[0].title).toBe("First");
     await db2.close();
@@ -77,7 +84,9 @@ describe("Migrations", () => {
       ],
     });
 
-    const migrations = await db.raw<{ version: number }>("SELECT version FROM __migrations__");
+    const migrations = await db.raw<{ version: number }>(
+      "SELECT version FROM __migrations__"
+    );
     expect(migrations).toHaveLength(1);
     expect(migrations[0].version).toBe(1);
     await db.close();
@@ -97,7 +106,10 @@ describe("Migrations", () => {
       ],
     });
 
-    await db1.exec("INSERT INTO todos (id, title) VALUES (?, ?)", ["1", "Test"]);
+    await db1.exec("INSERT INTO todos (id, title) VALUES (?, ?)", [
+      "1",
+      "Test",
+    ]);
     await db1.close();
 
     // Apply second migration
@@ -115,7 +127,9 @@ describe("Migrations", () => {
       ],
     });
 
-    const migrations = await db2.raw<{ version: number }>("SELECT version FROM __migrations__ ORDER BY version");
+    const migrations = await db2.raw<{ version: number }>(
+      "SELECT version FROM __migrations__ ORDER BY version"
+    );
     expect(migrations).toHaveLength(2);
     expect(migrations[0].version).toBe(1);
     expect(migrations[1].version).toBe(2);
@@ -142,7 +156,9 @@ describe("Migrations", () => {
     });
 
     // Should apply in order: 1, 2, 3
-    const migrations = await db.raw<{ version: number }>("SELECT version FROM __migrations__ ORDER BY version");
+    const migrations = await db.raw<{ version: number }>(
+      "SELECT version FROM __migrations__ ORDER BY version"
+    );
     expect(migrations).toHaveLength(3);
     expect(migrations[0].version).toBe(1);
     expect(migrations[1].version).toBe(2);

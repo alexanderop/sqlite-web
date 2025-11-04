@@ -70,7 +70,12 @@
     "unicorn/no-negated-condition": "warn",
     "unicorn/consistent-function-scoping": "warn"
   },
-  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/.astro/**", "**/coverage/**"],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/node_modules/**",
+    "**/.astro/**",
+    "**/coverage/**"
+  ],
   "settings": {
     "jsx": {
       "pragma": "h",

@@ -27,9 +27,9 @@ class SQLiteClient {
   private promiser: Promiser;
 
   async query(table) {
-    const result = await this.promiser('exec', {
-      sql: 'SELECT * FROM ...',
-      rowMode: 'object'
+    const result = await this.promiser("exec", {
+      sql: "SELECT * FROM ...",
+      rowMode: "object",
     });
     return result;
   }
@@ -55,13 +55,13 @@ The schema registry provides compile-time type safety by mapping table names to 
 ```typescript
 const schema = {
   users: z.object({ id: z.string(), name: z.string() }),
-  posts: z.object({ id: z.string(), title: z.string() })
+  posts: z.object({ id: z.string(), title: z.string() }),
 } as const;
 
 // TypeScript knows these tables exist
-db.query("users")  // ✅
-db.query("posts")  // ✅
-db.query("invalid") // ❌ TypeScript error
+db.query("users"); // ✅
+db.query("posts"); // ✅
+db.query("invalid"); // ❌ TypeScript error
 ```
 
 ## Type System
@@ -76,8 +76,9 @@ type SchemaRegistry = Record<string, z.ZodObject<any>>;
 type TableRow<TSchema, TTable> = z.infer<TSchema[TTable]>;
 
 // Query result - conditional based on select() usage
-type QueryResult<TRow, TSelected> =
-  TSelected extends never ? TRow : Pick<TRow, TSelected>;
+type QueryResult<TRow, TSelected> = TSelected extends never
+  ? TRow
+  : Pick<TRow, TSelected>;
 ```
 
 All query builder methods preserve and narrow types through the chain:
@@ -89,8 +90,8 @@ db.query("todos")
   // Type: QueryBuilder<Todo, "id" | "title">
   .where("completed", "=", true)
   // Type: QueryBuilder<Todo, "id" | "title">
-  .all()
-  // Type: Promise<Array<{ id: string, title: string }>>
+  .all();
+// Type: Promise<Array<{ id: string, title: string }>>
 ```
 
 ## Query Execution
@@ -99,10 +100,10 @@ Queries use `rowMode: "object"` to return JavaScript objects instead of arrays:
 
 ```typescript
 // rowMode: "array" (SQLite default)
-[["1", "Buy milk", 0]]
-
-// rowMode: "object" (our default)
-[{ id: "1", title: "Buy milk", completed: 0 }]
+[["1", "Buy milk", 0]][
+  // rowMode: "object" (our default)
+  { id: "1", title: "Buy milk", completed: 0 }
+];
 ```
 
 ## Pub/Sub System
@@ -128,6 +129,7 @@ This powers the reactive query system in the Vue package.
 ## Client Instance
 
 Each client instance maintains:
+
 - Its own Web Worker
 - Its own database connection
 - Its own pub/sub subscriptions

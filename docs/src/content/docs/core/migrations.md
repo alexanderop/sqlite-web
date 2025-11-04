@@ -23,9 +23,9 @@ const db = await createSQLiteClient({
           completed INTEGER DEFAULT 0,
           createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         )
-      `
-    }
-  ]
+      `,
+    },
+  ],
 });
 ```
 
@@ -45,8 +45,8 @@ const db = await createSQLiteClient({
   migrations: [
     { version: 1, sql: "CREATE TABLE users ..." },
     { version: 2, sql: "CREATE TABLE posts ..." },
-    { version: 3, sql: "ALTER TABLE users ADD COLUMN bio TEXT" }
-  ]
+    { version: 3, sql: "ALTER TABLE users ADD COLUMN bio TEXT" },
+  ],
 });
 
 // First query triggers migration execution
@@ -63,36 +63,36 @@ When you need to change your schema, add a new migration with the next version n
 const migrations = [
   {
     version: 1,
-    sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`
-  }
+    sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`,
+  },
 ];
 
 // Later, add a new column
 const migrations = [
   {
     version: 1,
-    sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`
+    sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`,
   },
   {
     version: 2,
-    sql: `ALTER TABLE todos ADD COLUMN completed INTEGER DEFAULT 0`
-  }
+    sql: `ALTER TABLE todos ADD COLUMN completed INTEGER DEFAULT 0`,
+  },
 ];
 
 // Even later, add another table
 const migrations = [
   {
     version: 1,
-    sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`
+    sql: `CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)`,
   },
   {
     version: 2,
-    sql: `ALTER TABLE todos ADD COLUMN completed INTEGER DEFAULT 0`
+    sql: `ALTER TABLE todos ADD COLUMN completed INTEGER DEFAULT 0`,
   },
   {
     version: 3,
-    sql: `CREATE TABLE tags (id TEXT PRIMARY KEY, name TEXT NOT NULL)`
-  }
+    sql: `CREATE TABLE tags (id TEXT PRIMARY KEY, name TEXT NOT NULL)`,
+  },
 ];
 ```
 
@@ -155,6 +155,7 @@ Each migration can contain multiple SQL statements:
 
 :::note
 SQLite's `ALTER TABLE` is limited. You can only:
+
 - Add columns with `ADD COLUMN`
 - Rename columns with `RENAME COLUMN` (SQLite 3.25+)
 - Rename tables with `RENAME TO`
@@ -255,31 +256,28 @@ For large projects, organize migrations in separate files:
 // migrations/001-initial.ts
 export const migration001 = {
   version: 1,
-  sql: `CREATE TABLE users (...)`
+  sql: `CREATE TABLE users (...)`,
 };
 
 // migrations/002-add-todos.ts
 export const migration002 = {
   version: 2,
-  sql: `CREATE TABLE todos (...)`
+  sql: `CREATE TABLE todos (...)`,
 };
 
 // migrations/index.ts
-import { migration001 } from './001-initial';
-import { migration002 } from './002-add-todos';
+import { migration001 } from "./001-initial";
+import { migration002 } from "./002-add-todos";
 
-export const migrations = [
-  migration001,
-  migration002,
-];
+export const migrations = [migration001, migration002];
 
 // app.ts
-import { migrations } from './migrations';
+import { migrations } from "./migrations";
 
 const db = await createSQLiteClient({
   schema: dbSchema,
   filename: "file:app.sqlite3?vfs=opfs",
-  migrations
+  migrations,
 });
 ```
 
@@ -301,7 +299,10 @@ const applied = await db.raw<{ version: number }>(
   "SELECT version FROM __migrations__ ORDER BY version"
 );
 
-console.log("Applied migrations:", applied.map(m => m.version));
+console.log(
+  "Applied migrations:",
+  applied.map((m) => m.version)
+);
 ```
 
 ## Development Workflow
@@ -333,7 +334,7 @@ Always test migrations before deploying:
 const testDb = await createSQLiteClient({
   schema: dbSchema,
   filename: "file:test.sqlite3?vfs=opfs",
-  migrations: [...existingMigrations, newMigration]
+  migrations: [...existingMigrations, newMigration],
 });
 
 // Run a test query to trigger migrations

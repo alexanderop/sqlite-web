@@ -27,9 +27,9 @@ const sqlite = createSQLite({
           id TEXT PRIMARY KEY,
           title TEXT NOT NULL
         );
-      `
-    }
-  ]
+      `,
+    },
+  ],
 });
 
 createApp(App).use(sqlite).mount("#app");
@@ -43,7 +43,12 @@ import { ref } from "vue";
 import { useSQLiteQuery, useSQLiteClientAsync } from "@alexop/sqlite-vue";
 
 // Reactive query with automatic updates
-const { rows: todos, loading, error, refresh } = useSQLiteQuery(
+const {
+  rows: todos,
+  loading,
+  error,
+  refresh,
+} = useSQLiteQuery(
   "SELECT * FROM todos ORDER BY rowid DESC",
   [],
   ["todos"] // Watch these tables for changes
@@ -56,10 +61,10 @@ const dbPromise = useSQLiteClientAsync();
 
 async function addTodo() {
   const db = await dbPromise;
-  await db.exec(
-    "INSERT INTO todos (id, title) VALUES (?, ?)",
-    [crypto.randomUUID(), newTitle.value]
-  );
+  await db.exec("INSERT INTO todos (id, title) VALUES (?, ?)", [
+    crypto.randomUUID(),
+    newTitle.value,
+  ]);
   db.notifyTable("todos"); // Trigger reactive updates
   newTitle.value = "";
 }
@@ -89,6 +94,7 @@ async function addTodo() {
 Creates a Vue plugin for SQLite.
 
 **Options:**
+
 - `filename` (string): Database filename
 - `migrations` (Migration[]): Optional migrations
 
@@ -97,11 +103,13 @@ Creates a Vue plugin for SQLite.
 Composable for reactive queries.
 
 **Parameters:**
+
 - `sql` (string): SQL query
 - `params` (unknown[]): Query parameters
 - `watchTables` (string[]): Tables to watch for changes
 
 **Returns:**
+
 - `rows`: Ref with query results
 - `loading`: Ref with loading state
 - `error`: Ref with error if any
@@ -114,6 +122,7 @@ Get the SQLite client instance. **Must be called during component setup**, not i
 **Returns:** `Promise<SQLiteClient>`
 
 **Usage:**
+
 ```typescript
 // ✅ Correct: Call during setup
 const dbPromise = useSQLiteClientAsync();
@@ -142,12 +151,12 @@ export default defineConfig({
   server: {
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin",
-      "Cross-Origin-Embedder-Policy": "require-corp"
-    }
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
   },
   optimizeDeps: {
-    exclude: ["@sqlite.org/sqlite-wasm"]
-  }
+    exclude: ["@sqlite.org/sqlite-wasm"],
+  },
 });
 ```
 

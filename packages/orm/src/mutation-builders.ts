@@ -34,7 +34,10 @@ export class InsertBuilder<TRow> {
    * @internal
    */
   constructor(
-    private executeQuery: <T = unknown>(sql: string, params: unknown[]) => Promise<T[]>,
+    private executeQuery: <T = unknown>(
+      sql: string,
+      params: unknown[]
+    ) => Promise<T[]>,
     private tableName: string,
     private schema: z.ZodObject<z.ZodRawShape>
   ) {}
@@ -127,7 +130,9 @@ export class InsertBuilder<TRow> {
     // Validate all rows before executing
     let validatedRows: Partial<TRow>[];
     try {
-      validatedRows = data.map((row) => this.schema.partial().parse(row) as Partial<TRow>);
+      validatedRows = data.map(
+        (row) => this.schema.partial().parse(row) as Partial<TRow>
+      );
     } catch (error) {
       if (error instanceof ZodError) {
         const firstIssue = error.issues[0];
@@ -144,7 +149,9 @@ export class InsertBuilder<TRow> {
     // Build multi-row INSERT statement
     const keys = Object.keys(validatedRows[0]);
     const placeholders = keys.map(() => "?").join(", ");
-    const valuesClauses = validatedRows.map(() => `(${placeholders})`).join(", ");
+    const valuesClauses = validatedRows
+      .map(() => `(${placeholders})`)
+      .join(", ");
 
     const sql = `INSERT INTO ${this.tableName} (${keys.join(", ")}) VALUES ${valuesClauses}`;
     const allValues = validatedRows.flatMap((row) => Object.values(row));
@@ -160,10 +167,10 @@ export class InsertBuilder<TRow> {
    * @internal
    */
   private async getLastInsertId(): Promise<number> {
-    const result = await this.executeQuery(
+    const result = (await this.executeQuery(
       "SELECT last_insert_rowid() as id",
       []
-    ) as Array<{ id: number }>;
+    )) as Array<{ id: number }>;
     return result[0]?.id || 0;
   }
 }
@@ -204,7 +211,10 @@ export class UpdateBuilder<TRow> {
    * @internal
    */
   constructor(
-    private executeQuery: <T = unknown>(sql: string, params: unknown[]) => Promise<T[]>,
+    private executeQuery: <T = unknown>(
+      sql: string,
+      params: unknown[]
+    ) => Promise<T[]>,
     private tableName: string,
     private schema: z.ZodObject<z.ZodRawShape>
   ) {}
@@ -247,9 +257,9 @@ export class UpdateBuilder<TRow> {
   ): this {
     const fieldName = String(field);
 
-    if (operator === 'IN' || operator === 'NOT IN') {
+    if (operator === "IN" || operator === "NOT IN") {
       const values = Array.isArray(value) ? value : [value];
-      const placeholders = values.map(() => '?').join(', ');
+      const placeholders = values.map(() => "?").join(", ");
       this.whereClauses.push(`${fieldName} ${operator} (${placeholders})`);
       this.whereParams.push(...values);
     } else {
@@ -353,7 +363,10 @@ export class UpdateBuilder<TRow> {
     await this.executeQuery(sql, params);
 
     // Get number of affected rows
-    const result = await this.executeQuery("SELECT changes() as count", []) as Array<{ count: number }>;
+    const result = (await this.executeQuery(
+      "SELECT changes() as count",
+      []
+    )) as Array<{ count: number }>;
     return result[0]?.count || 0;
   }
 }
@@ -391,7 +404,10 @@ export class DeleteBuilder<TRow> {
    * @internal
    */
   constructor(
-    private executeQuery: <T = unknown>(sql: string, params: unknown[]) => Promise<T[]>,
+    private executeQuery: <T = unknown>(
+      sql: string,
+      params: unknown[]
+    ) => Promise<T[]>,
     private tableName: string
   ) {}
 
@@ -432,9 +448,9 @@ export class DeleteBuilder<TRow> {
   ): this {
     const fieldName = String(field);
 
-    if (operator === 'IN' || operator === 'NOT IN') {
+    if (operator === "IN" || operator === "NOT IN") {
       const values = Array.isArray(value) ? value : [value];
-      const placeholders = values.map(() => '?').join(', ');
+      const placeholders = values.map(() => "?").join(", ");
       this.whereClauses.push(`${fieldName} ${operator} (${placeholders})`);
       this.whereParams.push(...values);
     } else {
@@ -487,7 +503,10 @@ export class DeleteBuilder<TRow> {
     await this.executeQuery(sql, this.whereParams);
 
     // Get number of affected rows
-    const result = await this.executeQuery("SELECT changes() as count", []) as Array<{ count: number }>;
+    const result = (await this.executeQuery(
+      "SELECT changes() as count",
+      []
+    )) as Array<{ count: number }>;
     return result[0]?.count || 0;
   }
 }

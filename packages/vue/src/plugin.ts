@@ -120,7 +120,10 @@ export function createSQLite<TSchema extends SchemaRegistry>(
   return {
     install(app: App) {
       // Type assertion needed because injection key uses SchemaRegistry but we have specific TSchema
-      app.provide(SQLITE_CLIENT_KEY, clientPromise as unknown as Promise<SQLiteClient<SchemaRegistry>>);
+      app.provide(
+        SQLITE_CLIENT_KEY,
+        clientPromise as unknown as Promise<SQLiteClient<SchemaRegistry>>
+      );
       void clientPromise.then((client) => {
         app.config.globalProperties["$sqlite"] = client;
       });

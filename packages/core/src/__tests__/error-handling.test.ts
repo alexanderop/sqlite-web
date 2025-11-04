@@ -69,13 +69,16 @@ describe("Error Handling", () => {
       ).rejects.toThrow(ValidationError);
 
       // Capture error to test properties
-      await db.insert("users").values({
-        name: "ab",
-        email: "invalid-email",
-        age: 200,
-      }).catch((e) => {
-        error = e as ValidationError;
-      });
+      await db
+        .insert("users")
+        .values({
+          name: "ab",
+          email: "invalid-email",
+          age: 200,
+        })
+        .catch((e) => {
+          error = e as ValidationError;
+        });
 
       expect(error).toBeInstanceOf(ValidationError);
       expect(error).toBeInstanceOf(SQLiteError);
@@ -102,7 +105,8 @@ describe("Error Handling", () => {
       let error: ValidationError | undefined;
 
       await expect(
-        db.update("users")
+        db
+          .update("users")
           .where("name", "=", "John Doe")
           .set({
             email: "not-an-email", // Invalid email
@@ -111,12 +115,14 @@ describe("Error Handling", () => {
       ).rejects.toThrow(ValidationError);
 
       // Capture error to test properties
-      await db.update("users")
+      await db
+        .update("users")
         .where("name", "=", "John Doe")
         .set({
           email: "not-an-email",
         })
-        .execute().catch((e) => {
+        .execute()
+        .catch((e) => {
           error = e as ValidationError;
         });
 
@@ -145,13 +151,16 @@ describe("Error Handling", () => {
       ).rejects.toThrow(ConstraintError);
 
       // Capture error to test properties
-      await db.insert("users").values({
-        name: "Jane Doe",
-        email: "john@example.com",
-        age: 25,
-      }).catch((e) => {
-        error = e as ConstraintError;
-      });
+      await db
+        .insert("users")
+        .values({
+          name: "Jane Doe",
+          email: "john@example.com",
+          age: 25,
+        })
+        .catch((e) => {
+          error = e as ConstraintError;
+        });
 
       expect(error).toBeInstanceOf(ConstraintError);
       expect(error).toBeInstanceOf(SQLiteError);
@@ -172,13 +181,16 @@ describe("Error Handling", () => {
       ).rejects.toThrow(ConstraintError);
 
       // Capture error to test properties
-      await db.insert("posts").values({
-        userId: 999,
-        title: "Test Post",
-        content: "Content",
-      }).catch((e) => {
-        error = e as ConstraintError;
-      });
+      await db
+        .insert("posts")
+        .values({
+          userId: 999,
+          title: "Test Post",
+          content: "Content",
+        })
+        .catch((e) => {
+          error = e as ConstraintError;
+        });
 
       expect(error).toBeInstanceOf(ConstraintError);
       expect(error?.code).toBe("CONSTRAINT_ERROR");
@@ -189,13 +201,19 @@ describe("Error Handling", () => {
       let error: ConstraintError | undefined;
 
       await expect(
-        db.exec(`INSERT INTO users (name, email) VALUES ('John', 'john@example.com')`)
+        db.exec(
+          `INSERT INTO users (name, email) VALUES ('John', 'john@example.com')`
+        )
       ).rejects.toThrow(ConstraintError);
 
       // Capture error to test properties
-      await db.exec(`INSERT INTO users (name, email) VALUES ('John', 'john@example.com')`).catch((e) => {
-        error = e as ConstraintError;
-      });
+      await db
+        .exec(
+          `INSERT INTO users (name, email) VALUES ('John', 'john@example.com')`
+        )
+        .catch((e) => {
+          error = e as ConstraintError;
+        });
 
       expect(error).toBeInstanceOf(ConstraintError);
       expect(error?.code).toBe("CONSTRAINT_ERROR");
@@ -207,9 +225,7 @@ describe("Error Handling", () => {
     it("should throw SQLiteError on SQL syntax error", async () => {
       let error: SQLiteError | undefined;
 
-      await expect(
-        db.exec("INVALID SQL SYNTAX")
-      ).rejects.toThrow(SQLiteError);
+      await expect(db.exec("INVALID SQL SYNTAX")).rejects.toThrow(SQLiteError);
 
       // Capture error to test properties
       await db.exec("INVALID SQL SYNTAX").catch((e) => {
@@ -225,9 +241,9 @@ describe("Error Handling", () => {
     it("should throw SQLiteError on non-existent table", async () => {
       let error: SQLiteError | undefined;
 
-      await expect(
-        db.exec("SELECT * FROM non_existent_table")
-      ).rejects.toThrow(SQLiteError);
+      await expect(db.exec("SELECT * FROM non_existent_table")).rejects.toThrow(
+        SQLiteError
+      );
 
       // Capture error to test properties
       await db.exec("SELECT * FROM non_existent_table").catch((e) => {
@@ -244,9 +260,9 @@ describe("Error Handling", () => {
     it("should include SQL in error for exec()", async () => {
       let error: SQLiteError | undefined;
 
-      await expect(
-        db.exec("SELECT * FROM invalid_table")
-      ).rejects.toThrow(SQLiteError);
+      await expect(db.exec("SELECT * FROM invalid_table")).rejects.toThrow(
+        SQLiteError
+      );
 
       // Capture error to test properties
       await db.exec("SELECT * FROM invalid_table").catch((e) => {
@@ -268,13 +284,16 @@ describe("Error Handling", () => {
       ).rejects.toThrow(ValidationError);
 
       // Capture error to test properties
-      await db.insert("users").values({
-        name: "Jo",
-        email: "joe@example.com",
-        age: 30,
-      }).catch((e) => {
-        error = e as ValidationError;
-      });
+      await db
+        .insert("users")
+        .values({
+          name: "Jo",
+          email: "joe@example.com",
+          age: 30,
+        })
+        .catch((e) => {
+          error = e as ValidationError;
+        });
 
       expect(error?.message).toMatch(/validation|failed|invalid/i);
     });

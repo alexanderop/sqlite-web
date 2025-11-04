@@ -20,5 +20,6 @@ import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-orm";
  * const dbPromise = inject(SQLITE_CLIENT_KEY);
  * ```
  */
-export const SQLITE_CLIENT_KEY: InjectionKey<Promise<SQLiteClient<SchemaRegistry>>> =
-  Symbol("SQLITE_CLIENT");
+export const SQLITE_CLIENT_KEY: InjectionKey<
+  Promise<SQLiteClient<SchemaRegistry>>
+> = Symbol("SQLITE_CLIENT");

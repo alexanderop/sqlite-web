@@ -2,7 +2,11 @@
 import { ref } from "vue";
 import { useSQLiteClientAsync, useSQLiteQuery } from "./composables/db";
 
-const { rows: todos, loading, error } = useSQLiteQuery(
+const {
+  rows: todos,
+  loading,
+  error,
+} = useSQLiteQuery(
   (db) => db.query("todos").orderBy("createdAt", "DESC").all(),
   { tables: ["todos"] }
 );
@@ -15,13 +19,18 @@ const editingTitle = ref("");
 const dbPromise = useSQLiteClientAsync();
 
 async function addTodo() {
-  if (!newTitle.value.trim()) {return;}
+  if (!newTitle.value.trim()) {
+    return;
+  }
 
   const db = await dbPromise;
 
   // Use insert builder with validation
   await db.insert("todos").values({
-    completed: false, createdAt: new Date().toISOString(), id: crypto.randomUUID(), title: newTitle.value,
+    completed: false,
+    createdAt: new Date().toISOString(),
+    id: crypto.randomUUID(),
+    title: newTitle.value,
   });
 
   db.notifyTable("todos");
@@ -55,12 +64,15 @@ function cancelEdit() {
 }
 
 async function updateTodo(id: string) {
-  if (!editingTitle.value.trim()) {return;}
+  if (!editingTitle.value.trim()) {
+    return;
+  }
 
   const db = await dbPromise;
 
   // Use update builder
-  await db.update("todos")
+  await db
+    .update("todos")
     .where("id", "=", id)
     .set({ title: editingTitle.value })
     .execute();
@@ -73,7 +85,8 @@ async function updateTodo(id: string) {
 async function toggleComplete(id: string, completed: boolean) {
   const db = await dbPromise;
 
-  await db.update("todos")
+  await db
+    .update("todos")
     .where("id", "=", id)
     .set({ completed: !completed })
     .execute();
@@ -92,10 +105,7 @@ async function toggleComplete(id: string, completed: boolean) {
         class="border px-2 py-1 rounded flex-1"
         placeholder="Todo title"
       />
-      <button
-        type="submit"
-        class="bg-blue-600 text-white px-4 py-1 rounded"
-      >
+      <button type="submit" class="bg-blue-600 text-white px-4 py-1 rounded">
         Add
       </button>
     </form>
@@ -140,7 +150,10 @@ async function toggleComplete(id: string, completed: boolean) {
             @change="toggleComplete(t.id, t.completed)"
             class="w-5 h-5"
           />
-          <span class="flex-1" :class="{ 'line-through text-gray-400': t.completed }">
+          <span
+            class="flex-1"
+            :class="{ 'line-through text-gray-400': t.completed }"
+          >
             {{ t.title }}
           </span>
           <button

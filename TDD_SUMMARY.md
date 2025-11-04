@@ -11,6 +11,7 @@ We successfully used **Test-Driven Development (TDD)** to implement type-safe Vu
 **File**: `packages/vue/src/__tests__/vue-types.test-d.ts`
 
 Created 11 type tests that verify:
+
 - `useSQLiteClientAsync()` returns properly typed client
 - Column name validation in queries
 - Value type checking
@@ -33,11 +34,13 @@ Tests       5 failed | 6 passed (11)
    - Returns fully typed `useSQLiteClientAsync()` and `useSQLiteQuery()`
 
 2. **Exported from package** (`packages/vue/src/index.ts`)
+
    ```typescript
    export { createTypedComposables } from "./typed-composables";
    ```
 
 3. **Created typed composables in app** (`examples/vue-app/src/composables/db.ts`)
+
    ```typescript
    export const { useSQLiteClientAsync, useSQLiteQuery } =
      createTypedComposables<typeof dbSchema>();
@@ -61,6 +64,7 @@ Type Errors  no errors
 ### ✅ Full Type Safety in Vue Components
 
 **Before** (no type safety):
+
 ```typescript
 // Typos and wrong types not caught
 import { useSQLiteClientAsync } from "@alexop/sqlite-vue";
@@ -70,6 +74,7 @@ await db.delete("todos").where("idz", "=", id); // ❌ No error - typo not caugh
 ```
 
 **After** (full type safety):
+
 ```typescript
 // TypeScript catches all errors at compile time!
 import { useSQLiteClientAsync } from "./composables/db";
@@ -82,10 +87,12 @@ await db.delete("todos").where("idz", "=", id);
 ### 📊 Test Coverage
 
 **Core Package** (`@alexop/sqlite-core`):
+
 - 27 type tests - all passing ✅
 - Tests SQL generation, query builder, mutations
 
 **Vue Package** (`@alexop/sqlite-vue`):
+
 - 9 type tests - all passing ✅
 - Tests composable type inference
 
@@ -102,7 +109,7 @@ const dbSchema = {
     id: z.string(),
     title: z.string(),
     completed: z.boolean(),
-  })
+  }),
 } as const;
 ```
 
@@ -163,12 +170,14 @@ pnpm -r test:type
 ## Files Modified
 
 ### Created
+
 - `packages/vue/src/typed-composables.ts` - Typed composables factory
 - `packages/vue/src/__tests__/vue-types.test-d.ts` - Type tests
 - `packages/vue/vitest.config.ts` - Test configuration
 - `examples/vue-app/src/composables/db.ts` - App-specific typed composables
 
 ### Modified
+
 - `packages/vue/src/index.ts` - Export `createTypedComposables`
 - `packages/vue/package.json` - Add test scripts, zod devDependency
 - `examples/vue-app/src/App.vue` - Use typed composables

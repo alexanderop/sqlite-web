@@ -6,15 +6,20 @@ import { playwright } from "@vitest/browser-playwright";
 export default defineConfig({
   optimizeDeps: {
     exclude: ["@sqlite.org/sqlite-wasm"],
-  }, plugins: [vue()], resolve: {
+  },
+  plugins: [vue()],
+  resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  }, server: {
+  },
+  server: {
     headers: {
-      "Cross-Origin-Embedder-Policy": "require-corp", "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
     },
-  }, test: {
+  },
+  test: {
     globals: true,
     // Browser tests for Vue components with SQLite
     browser: {
@@ -29,7 +34,8 @@ export default defineConfig({
       screenshotFailures: true,
       // Configure viewport for consistent testing
       viewport: {
-        height: 720, width: 1280,
+        height: 720,
+        width: 1280,
       },
       // Enable trace on failure for debugging
       trace: "retain-on-failure",

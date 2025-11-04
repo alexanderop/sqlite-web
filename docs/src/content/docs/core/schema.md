@@ -18,7 +18,7 @@ const dbSchema = {
     name: z.string(),
     email: z.string().email(),
     createdAt: z.string(),
-  })
+  }),
 } as const;
 ```
 
@@ -44,7 +44,7 @@ Defaults are applied during insert operations:
 ```typescript
 await db.insert("todos").values({
   id: crypto.randomUUID(),
-  title: "Buy groceries"
+  title: "Buy groceries",
   // completed and createdAt use defaults
 });
 ```
@@ -64,14 +64,14 @@ const userSchema = z.object({
 // Valid - bio is optional
 await db.insert("users").values({
   id: "1",
-  name: "Alice"
+  name: "Alice",
 });
 
 // Also valid
 await db.insert("users").values({
   id: "2",
   name: "Bob",
-  bio: "Software developer"
+  bio: "Software developer",
 });
 ```
 
@@ -90,21 +90,21 @@ const userSchema = z.object({
 await db.insert("users").values({
   id: crypto.randomUUID(),
   email: "alice@example.com",
-  age: 30
+  age: 30,
 });
 
 // ❌ Throws ZodError - invalid email
 await db.insert("users").values({
   id: crypto.randomUUID(),
   email: "not-an-email",
-  age: 30
+  age: 30,
 });
 
 // ❌ Throws ZodError - age out of range
 await db.insert("users").values({
   id: crypto.randomUUID(),
   email: "bob@example.com",
-  age: 200
+  age: 200,
 });
 ```
 
@@ -132,7 +132,7 @@ const dbSchema = {
     userId: z.string(),
     text: z.string(),
     createdAt: z.string(),
-  })
+  }),
 } as const;
 ```
 
@@ -148,7 +148,7 @@ const dbSchema = {
     id: z.string(),
     title: z.string(),
     completed: z.boolean(),
-  })
+  }),
 } as const;
 
 const db = await createSQLiteClient({ schema: dbSchema });
@@ -164,23 +164,24 @@ const titles = await db.query("todos").select("title").all();
 
 SQLite only has a few storage classes. Here's how Zod types map to SQLite:
 
-| Zod Type | SQLite Type | Notes |
-|----------|-------------|-------|
-| `z.string()` | `TEXT` | Strings and dates (as ISO strings) |
-| `z.number()` | `INTEGER` or `REAL` | Integers and floats |
-| `z.boolean()` | `INTEGER` | Stored as 0 (false) or 1 (true) |
-| `z.date()` | `TEXT` | Store as ISO string with transform |
-| `z.object()` | `TEXT` | Store as JSON string |
-| `z.array()` | `TEXT` | Store as JSON string |
+| Zod Type      | SQLite Type         | Notes                              |
+| ------------- | ------------------- | ---------------------------------- |
+| `z.string()`  | `TEXT`              | Strings and dates (as ISO strings) |
+| `z.number()`  | `INTEGER` or `REAL` | Integers and floats                |
+| `z.boolean()` | `INTEGER`           | Stored as 0 (false) or 1 (true)    |
+| `z.date()`    | `TEXT`              | Store as ISO string with transform |
+| `z.object()`  | `TEXT`              | Store as JSON string               |
+| `z.array()`   | `TEXT`              | Store as JSON string               |
 
 :::note
 For dates, we recommend using ISO 8601 strings (`z.string()`) rather than `z.date()` for simplicity. If you need `Date` objects, use Zod transforms:
 
 ```typescript
 const schema = z.object({
-  createdAt: z.string().transform(str => new Date(str))
+  createdAt: z.string().transform((str) => new Date(str)),
 });
 ```
+
 :::
 
 ## Enums
@@ -191,25 +192,21 @@ Use Zod's enum or union types for constrained values:
 const taskSchema = z.object({
   id: z.string(),
   status: z.enum(["pending", "in_progress", "completed"]),
-  priority: z.union([
-    z.literal("low"),
-    z.literal("medium"),
-    z.literal("high")
-  ]),
+  priority: z.union([z.literal("low"), z.literal("medium"), z.literal("high")]),
 });
 
 // ✅ Valid
 await db.insert("tasks").values({
   id: "1",
   status: "pending",
-  priority: "high"
+  priority: "high",
 });
 
 // ❌ TypeScript error - invalid status
 await db.insert("tasks").values({
   id: "2",
   status: "invalid",
-  priority: "low"
+  priority: "low",
 });
 ```
 
@@ -226,8 +223,8 @@ const productSchema = z.object({
     dimensions: z.object({
       width: z.number(),
       height: z.number(),
-    })
-  })
+    }),
+  }),
 });
 
 await db.insert("products").values({
@@ -235,8 +232,8 @@ await db.insert("products").values({
   name: "Widget",
   metadata: {
     tags: ["electronics", "gadget"],
-    dimensions: { width: 10, height: 5 }
-  }
+    dimensions: { width: 10, height: 5 },
+  },
 });
 ```
 
@@ -255,18 +252,23 @@ CREATE TABLE products (
 Add custom validation with Zod refinements:
 
 ```typescript
-const userSchema = z.object({
-  username: z.string()
-    .min(3, "Username must be at least 3 characters")
-    .max(20, "Username must be at most 20 characters")
-    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
-  password: z.string()
-    .min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string()
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"]
-});
+const userSchema = z
+  .object({
+    username: z
+      .string()
+      .min(3, "Username must be at least 3 characters")
+      .max(20, "Username must be at most 20 characters")
+      .regex(
+        /^[a-zA-Z0-9_]+$/,
+        "Username can only contain letters, numbers, and underscores"
+      ),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 ```
 
 ## Best Practices

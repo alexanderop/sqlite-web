@@ -48,9 +48,9 @@ const db = await createSQLiteClient({
           completed INTEGER DEFAULT 0,
           createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         )
-      `
-    }
-  ]
+      `,
+    },
+  ],
 });
 ```
 
@@ -64,22 +64,19 @@ Now you can query your database with full TypeScript autocomplete:
 
 ```typescript
 // Get all incomplete todos
-const incompleteTodos = await db.query("todos")
+const incompleteTodos = await db
+  .query("todos")
   .where("completed", "=", false)
   .orderBy("createdAt", "DESC")
   .all();
 // Type: Array<{ id: string, title: string, completed: boolean, createdAt: string }>
 
 // Get only titles
-const titles = await db.query("todos")
-  .select("title")
-  .all();
+const titles = await db.query("todos").select("title").all();
 // Type: Array<{ title: string }>
 
 // Get a single todo
-const todo = await db.query("todos")
-  .where("id", "=", "123")
-  .first();
+const todo = await db.query("todos").where("id", "=", "123").first();
 // Type: { id: string, title: string, completed: boolean, createdAt: string } | null
 
 // Count todos
@@ -111,15 +108,14 @@ Modify existing data:
 
 ```typescript
 // Update
-await db.update("todos")
+await db
+  .update("todos")
   .where("id", "=", "123")
   .set({ completed: true })
   .execute();
 
 // Delete
-await db.delete("todos")
-  .where("completed", "=", true)
-  .execute();
+await db.delete("todos").where("completed", "=", true).execute();
 ```
 
 ## Complete Example
@@ -137,34 +133,34 @@ const dbSchema = {
     title: z.string(),
     completed: z.boolean().default(false),
     createdAt: z.string().default(() => new Date().toISOString()),
-  })
+  }),
 } as const;
 
 // 2. Create client
 const db = await createSQLiteClient({
   schema: dbSchema,
   filename: "file:todos.sqlite3?vfs=opfs",
-  migrations: [{
-    version: 1,
-    sql: `CREATE TABLE todos (
+  migrations: [
+    {
+      version: 1,
+      sql: `CREATE TABLE todos (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
       completed INTEGER DEFAULT 0,
       createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-    )`
-  }]
+    )`,
+    },
+  ],
 });
 
 // 3. Insert data
 await db.insert("todos").values({
   id: crypto.randomUUID(),
-  title: "Build something awesome"
+  title: "Build something awesome",
 });
 
 // 4. Query data
-const todos = await db.query("todos")
-  .where("completed", "=", false)
-  .all();
+const todos = await db.query("todos").where("completed", "=", false).all();
 
 console.log(todos);
 ```

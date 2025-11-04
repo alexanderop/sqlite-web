@@ -110,10 +110,15 @@ describe("Database Cleanup", () => {
     });
 
     // Insert should work
-    await db.exec("INSERT INTO todos (id, title) VALUES (?, ?)", ["1", "Test task"]);
+    await db.exec("INSERT INTO todos (id, title) VALUES (?, ?)", [
+      "1",
+      "Test task",
+    ]);
 
     // Query should work
-    const todos = await db.raw<{ id: string; title: string }>("SELECT * FROM todos");
+    const todos = await db.raw<{ id: string; title: string }>(
+      "SELECT * FROM todos"
+    );
     expect(todos).toHaveLength(1);
     expect(todos[0].title).toBe("Test task");
 

@@ -14,18 +14,19 @@ import { z } from "zod";
 
 // Without 'as const'
 const badSchema = {
-  users: z.object({ id: z.string(), name: z.string() })
+  users: z.object({ id: z.string(), name: z.string() }),
 };
 // Type: { users: ZodObject<...> }
 
 // With 'as const'
 const goodSchema = {
-  users: z.object({ id: z.string(), name: z.string() })
+  users: z.object({ id: z.string(), name: z.string() }),
 } as const;
 // Type: { readonly users: ZodObject<...> }
 ```
 
 The `as const` is critical for:
+
 - Table name autocomplete
 - Column name autocomplete
 - Value type checking
@@ -63,18 +64,18 @@ const schema = {
     id: z.string(),
     name: z.string(),
     email: z.string(),
-  })
+  }),
 } as const;
 
 // ✅ Valid columns
-db.query("users").select("id", "name")
-db.query("users").where("email", "=", "alice@example.com")
+db.query("users").select("id", "name");
+db.query("users").where("email", "=", "alice@example.com");
 
 // ❌ TypeScript errors
-db.query("users").select("invalid")
+db.query("users").select("invalid");
 //                       ^^^^^^^^^ Argument of type '"invalid"' is not assignable
 
-db.query("users").where("invalid", "=", "value")
+db.query("users").where("invalid", "=", "value");
 //                      ^^^^^^^^^ Argument of type '"invalid"' is not assignable
 ```
 
@@ -89,22 +90,22 @@ const schema = {
     name: z.string(),
     age: z.number(),
     active: z.boolean(),
-  })
+  }),
 } as const;
 
 // ✅ Valid - correct types
-db.query("users").where("name", "=", "Alice")
-db.query("users").where("age", ">", 18)
-db.query("users").where("active", "=", true)
+db.query("users").where("name", "=", "Alice");
+db.query("users").where("age", ">", 18);
+db.query("users").where("active", "=", true);
 
 // ❌ TypeScript errors - wrong types
-db.query("users").where("name", "=", 123)
+db.query("users").where("name", "=", 123);
 //                                  ^^^ Type 'number' is not assignable to type 'string'
 
-db.query("users").where("age", ">", "18")
+db.query("users").where("age", ">", "18");
 //                                  ^^^^ Type 'string' is not assignable to type 'number'
 
-db.query("users").where("active", "=", "yes")
+db.query("users").where("active", "=", "yes");
 //                                     ^^^^^ Type 'string' is not assignable to type 'boolean'
 ```
 
@@ -164,9 +165,9 @@ TypeScript will error if you try to access non-selected fields:
 ```typescript
 const users = await db.query("users").select("id", "name").all();
 
-users[0].id    // ✅ OK
-users[0].name  // ✅ OK
-users[0].email // ❌ TypeScript error - 'email' doesn't exist on type
+users[0].id; // ✅ OK
+users[0].name; // ✅ OK
+users[0].email; // ❌ TypeScript error - 'email' doesn't exist on type
 ```
 
 ## Insert Type Checking
@@ -180,7 +181,7 @@ const schema = {
     name: z.string(),
     email: z.string().email(),
     age: z.number().min(0).max(150),
-  })
+  }),
 } as const;
 
 // ✅ Valid
@@ -188,7 +189,7 @@ await db.insert("users").values({
   id: "1",
   name: "Alice",
   email: "alice@example.com",
-  age: 30
+  age: 30,
 });
 
 // ❌ Missing required field
@@ -196,7 +197,7 @@ await db.insert("users").values({
   id: "1",
   name: "Alice",
   // email missing!
-  age: 30
+  age: 30,
 });
 
 // ❌ Wrong type
@@ -204,7 +205,7 @@ await db.insert("users").values({
   id: "1",
   name: "Alice",
   email: "alice@example.com",
-  age: "thirty"  // Should be number
+  age: "thirty", // Should be number
 });
 ```
 
@@ -214,19 +215,18 @@ Updates are also type-checked:
 
 ```typescript
 // ✅ Valid
-await db.update("users")
-  .where("id", "=", "1")
-  .set({ age: 31 })
-  .execute();
+await db.update("users").where("id", "=", "1").set({ age: 31 }).execute();
 
 // ❌ Wrong type
-await db.update("users")
+await db
+  .update("users")
   .where("id", "=", "1")
-  .set({ age: "31" })  // Should be number
+  .set({ age: "31" }) // Should be number
   .execute();
 
 // ❌ Invalid field
-await db.update("users")
+await db
+  .update("users")
   .where("id", "=", "1")
   .set({ invalid: "value" })
   .execute();
@@ -263,7 +263,7 @@ export type User = z.infer<typeof userSchema>;
 export type Post = z.infer<typeof postSchema>;
 
 // components/UserProfile.vue
-import type { User } from '@/db/schema';
+import type { User } from "@/db/schema";
 
 interface Props {
   user: User;
@@ -278,27 +278,23 @@ const props = defineProps<Props>();
 Create type-safe helper functions:
 
 ```typescript
-import type { SQLiteClient, SchemaRegistry } from '@alexop/sqlite-core';
+import type { SQLiteClient, SchemaRegistry } from "@alexop/sqlite-core";
 
 // Type-safe query builder
 function createQueryBuilder<TSchema extends SchemaRegistry>(
   db: SQLiteClient<TSchema>
 ) {
   return {
-    async findById<TTable extends keyof TSchema>(
-      table: TTable,
-      id: string
-    ) {
-      return db.query(table)
+    async findById<TTable extends keyof TSchema>(table: TTable, id: string) {
+      return db
+        .query(table)
         .where("id" as any, "=", id)
         .first();
     },
 
-    async findAll<TTable extends keyof TSchema>(
-      table: TTable
-    ) {
+    async findAll<TTable extends keyof TSchema>(table: TTable) {
       return db.query(table).all();
-    }
+    },
   };
 }
 
@@ -316,21 +312,23 @@ const posts = await qb.findAll("posts");
 Use conditional types for advanced patterns:
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
-type TableRow<TSchema extends SchemaRegistry, TTable extends keyof TSchema> =
-  z.infer<TSchema[TTable]>;
+type TableRow<
+  TSchema extends SchemaRegistry,
+  TTable extends keyof TSchema,
+> = z.infer<TSchema[TTable]>;
 
-type QueryResult<TRow, TSelected extends keyof TRow | never = never> =
-  TSelected extends never
-    ? TRow
-    : Pick<TRow, TSelected>;
+type QueryResult<
+  TRow,
+  TSelected extends keyof TRow | never = never,
+> = TSelected extends never ? TRow : Pick<TRow, TSelected>;
 
 // Usage in composables
 function useTypedQuery<
   TSchema extends SchemaRegistry,
   TTable extends keyof TSchema,
-  TSelected extends keyof TableRow<TSchema, TTable> | never = never
+  TSelected extends keyof TableRow<TSchema, TTable> | never = never,
 >(
   table: TTable,
   select?: TSelected[]
@@ -352,17 +350,16 @@ Type your Vue components with schema types:
 
 ```vue
 <script setup lang="ts">
-import type { User } from '@/db/schema';
-import { useSQLiteQuery } from '@alexop/sqlite-vue';
+import type { User } from "@/db/schema";
+import { useSQLiteQuery } from "@alexop/sqlite-vue";
 
-const { rows: users } = useSQLiteQuery(
-  (db) => db.query("users").all(),
-  { tables: ["users"] }
-);
+const { rows: users } = useSQLiteQuery((db) => db.query("users").all(), {
+  tables: ["users"],
+});
 // rows type: Ref<Array<User> | null>
 
 function handleUser(user: User) {
-  console.log(user.name);  // ✅ TypeScript knows 'name' exists
+  console.log(user.name); // ✅ TypeScript knows 'name' exists
   console.log(user.invalid); // ❌ TypeScript error
 }
 </script>
@@ -401,19 +398,19 @@ Create reusable type utilities:
 
 ```typescript
 // db/types.ts
-import { z } from 'zod';
-import type { dbSchema } from './schema';
+import { z } from "zod";
+import type { dbSchema } from "./schema";
 
 // Extract all table names
 export type TableName = keyof typeof dbSchema;
 
 // Extract row type for a table
-export type RowOf<T extends TableName> = z.infer<typeof dbSchema[T]>;
+export type RowOf<T extends TableName> = z.infer<(typeof dbSchema)[T]>;
 
 // Extract a specific field type
 export type FieldOf<
   T extends TableName,
-  F extends keyof RowOf<T>
+  F extends keyof RowOf<T>,
 > = RowOf<T>[F];
 
 // Usage

@@ -1,6 +1,10 @@
 import type { z } from "zod";
 import { QueryBuilder } from "./query-builder";
-import { DeleteBuilder, InsertBuilder, UpdateBuilder } from "./mutation-builders";
+import {
+  DeleteBuilder,
+  InsertBuilder,
+  UpdateBuilder,
+} from "./mutation-builders";
 import type { SchemaRegistry, TableName, TableRow } from "./types";
 
 /**
@@ -56,7 +60,10 @@ export class Transaction<TSchema extends SchemaRegistry> {
    * @internal
    */
   constructor(
-    private executeQuery: <T = unknown>(sql: string, params: unknown[]) => Promise<T[]>,
+    private executeQuery: <T = unknown>(
+      sql: string,
+      params: unknown[]
+    ) => Promise<T[]>,
     private schema: TSchema
   ) {}
 
@@ -95,10 +102,16 @@ export class Transaction<TSchema extends SchemaRegistry> {
    * });
    * ```
    */
-  query<TTable extends TableName<TSchema>>(table: TTable): QueryBuilder<TableRow<TSchema, TTable>> {
+  query<TTable extends TableName<TSchema>>(
+    table: TTable
+  ): QueryBuilder<TableRow<TSchema, TTable>> {
     this.ensureActive();
     const tableSchema = this.schema[table] as z.ZodObject<z.ZodRawShape>;
-    return QueryBuilder.create<TableRow<TSchema, TTable>>(this.executeQuery, String(table), tableSchema);
+    return QueryBuilder.create<TableRow<TSchema, TTable>>(
+      this.executeQuery,
+      String(table),
+      tableSchema
+    );
   }
 
   /**
@@ -122,7 +135,9 @@ export class Transaction<TSchema extends SchemaRegistry> {
    * });
    * ```
    */
-  insert<TTable extends TableName<TSchema>>(table: TTable): InsertBuilder<TableRow<TSchema, TTable>> {
+  insert<TTable extends TableName<TSchema>>(
+    table: TTable
+  ): InsertBuilder<TableRow<TSchema, TTable>> {
     this.ensureActive();
     const tableSchema = this.schema[table] as z.ZodObject<z.ZodRawShape>;
     return new InsertBuilder(this.executeQuery, String(table), tableSchema);
@@ -148,7 +163,9 @@ export class Transaction<TSchema extends SchemaRegistry> {
    * });
    * ```
    */
-  update<TTable extends TableName<TSchema>>(table: TTable): UpdateBuilder<TableRow<TSchema, TTable>> {
+  update<TTable extends TableName<TSchema>>(
+    table: TTable
+  ): UpdateBuilder<TableRow<TSchema, TTable>> {
     this.ensureActive();
     const tableSchema = this.schema[table] as z.ZodObject<z.ZodRawShape>;
     return new UpdateBuilder(this.executeQuery, String(table), tableSchema);
@@ -173,7 +190,9 @@ export class Transaction<TSchema extends SchemaRegistry> {
    * });
    * ```
    */
-  delete<TTable extends TableName<TSchema>>(table: TTable): DeleteBuilder<TableRow<TSchema, TTable>> {
+  delete<TTable extends TableName<TSchema>>(
+    table: TTable
+  ): DeleteBuilder<TableRow<TSchema, TTable>> {
     this.ensureActive();
     return new DeleteBuilder(this.executeQuery, String(table));
   }

@@ -84,8 +84,12 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
-      await db.insert("users").values({ id: "2", name: "Jane", email: "jane@example.com", age: 25 });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "2", name: "Jane", email: "jane@example.com", age: 25 });
 
       const results = await db.query("users").$castTo<UserWithProfile>().all();
 
@@ -106,10 +110,16 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: null, age: null });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: null, age: null });
 
       type NameOnly = { name: string };
-      const result = await db.query("users").select("name").$castTo<NameOnly>().all();
+      const result = await db
+        .query("users")
+        .select("name")
+        .$castTo<NameOnly>()
+        .all();
 
       expect(result).toHaveLength(1);
       expect(result[0]).toHaveProperty("name");
@@ -130,8 +140,12 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
-      await db.insert("users").values({ id: "2", name: "Jane", email: null, age: null });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "2", name: "Jane", email: null, age: null });
 
       // After IS NOT NULL check, email is guaranteed non-null
       const result = await db
@@ -158,7 +172,9 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
 
       const result = await db
         .query("users")
@@ -183,7 +199,9 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
 
       const result = await db
         .query("users")
@@ -211,7 +229,9 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
 
       const result = await db
         .query("users")
@@ -238,8 +258,12 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
-      await db.insert("users").values({ id: "2", name: "Jane", email: null, age: null });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "2", name: "Jane", email: null, age: null });
 
       // Narrow just the email field (remove null)
       type Narrowed = { email: string };
@@ -269,7 +293,9 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
 
       // Narrow both email and age (remove null from both)
       type Narrowed = { email: string; age: number };
@@ -298,7 +324,9 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
 
       type Narrowed = { email: string };
 
@@ -324,7 +352,9 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
 
       type Narrowed = { email: string };
 
@@ -353,8 +383,12 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
-      await db.insert("users").values({ id: "2", name: "Jane", email: "jane@example.com", age: 25 });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "2", name: "Jane", email: "jane@example.com", age: 25 });
 
       const result = await db
         .query("users")
@@ -380,9 +414,18 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
-      await db.insert("users").values({ id: "2", name: "Alice", email: "alice@example.com", age: 35 });
-      await db.insert("users").values({ id: "3", name: "Bob", email: null, age: null });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db.insert("users").values({
+        id: "2",
+        name: "Alice",
+        email: "alice@example.com",
+        age: 35,
+      });
+      await db
+        .insert("users")
+        .values({ id: "3", name: "Bob", email: null, age: null });
 
       const result = await db
         .query("users")
@@ -408,9 +451,18 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
-      await db.insert("users").values({ id: "2", name: "Jane", email: "jane@example.com", age: 25 });
-      await db.insert("users").values({ id: "3", name: "Alice", email: "alice@example.com", age: 35 });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "2", name: "Jane", email: "jane@example.com", age: 25 });
+      await db.insert("users").values({
+        id: "3",
+        name: "Alice",
+        email: "alice@example.com",
+        age: 35,
+      });
 
       type Narrowed = { email: string };
 
@@ -442,9 +494,18 @@ describe("Type Narrowing Methods", () => {
         schema: testSchema,
       });
 
-      await db.insert("users").values({ id: "1", name: "John", email: "john@example.com", age: 30 });
-      await db.insert("users").values({ id: "2", name: "Jane", email: null, age: null });
-      await db.insert("users").values({ id: "3", name: "Alice", email: "alice@example.com", age: 35 });
+      await db
+        .insert("users")
+        .values({ id: "1", name: "John", email: "john@example.com", age: 30 });
+      await db
+        .insert("users")
+        .values({ id: "2", name: "Jane", email: null, age: null });
+      await db.insert("users").values({
+        id: "3",
+        name: "Alice",
+        email: "alice@example.com",
+        age: 35,
+      });
 
       const count = await db
         .query("users")

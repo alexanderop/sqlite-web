@@ -1,12 +1,24 @@
 /**
  * SQL comparison operators
  */
-export type SQLOperator = '=' | '>' | '<' | '>=' | '<=' | '!=' | 'LIKE' | 'IN' | 'NOT IN' | 'IS NULL' | 'IS NOT NULL' | 'BETWEEN';
+export type SQLOperator =
+  | "="
+  | ">"
+  | "<"
+  | ">="
+  | "<="
+  | "!="
+  | "LIKE"
+  | "IN"
+  | "NOT IN"
+  | "IS NULL"
+  | "IS NOT NULL"
+  | "BETWEEN";
 
 /**
  * Sort direction
  */
-export type SortDirection = 'ASC' | 'DESC';
+export type SortDirection = "ASC" | "DESC";
 
 /**
  * Represents a database migration with a version number and SQL statement

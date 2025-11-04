@@ -7,7 +7,10 @@ import App from "./App.vue";
 
 // Define Zod schema for the database
 const todoSchema = z.object({
-  completed: z.boolean().default(false), createdAt: z.string().default(() => new Date().toISOString()), id: z.string(), title: z.string(),
+  completed: z.boolean().default(false),
+  createdAt: z.string().default(() => new Date().toISOString()),
+  id: z.string(),
+  title: z.string(),
 });
 
 const dbSchema = {
@@ -17,7 +20,8 @@ const dbSchema = {
 // Helper to render App with SQLite plugin
 function renderApp() {
   const sqlitePlugin = createSQLite({
-    filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`, migrations: [
+    filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
+    migrations: [
       {
         sql: `
           CREATE TABLE IF NOT EXISTS todos (
@@ -26,9 +30,11 @@ function renderApp() {
             completed INTEGER DEFAULT 0,
             createdAt TEXT DEFAULT CURRENT_TIMESTAMP
           );
-        `, version: 1,
+        `,
+        version: 1,
       },
-    ], schema: dbSchema,
+    ],
+    schema: dbSchema,
   });
 
   return render(App, {
@@ -46,7 +52,9 @@ describe("Todo App - Component Integration Tests", () => {
   describe("Initial Render", () => {
     it("should display the app title", async () => {
       const screen = renderApp();
-      await expect.element(screen.getByText("SQLite Vue test")).toBeInTheDocument();
+      await expect
+        .element(screen.getByText("SQLite Vue test"))
+        .toBeInTheDocument();
     });
 
     it("should display empty state when no todos", async () => {
@@ -57,8 +65,12 @@ describe("Todo App - Component Integration Tests", () => {
 
     it("should render input field and add button", async () => {
       renderApp();
-      await expect.element(page.getByPlaceholder("Todo title")).toBeInTheDocument();
-      await expect.element(page.getByRole("button", { name: /add/i })).toBeInTheDocument();
+      await expect
+        .element(page.getByPlaceholder("Todo title"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByRole("button", { name: /add/i }))
+        .toBeInTheDocument();
     });
   });
 
@@ -82,7 +94,6 @@ describe("Todo App - Component Integration Tests", () => {
     it("should clear input after adding todo", async () => {
       renderApp();
 
-
       const input = page.getByPlaceholder("Todo title");
       await input.fill("Test todo");
       await page.getByRole("button", { name: /add/i }).click();
@@ -94,7 +105,6 @@ describe("Todo App - Component Integration Tests", () => {
     it("should not add empty todos", async () => {
       renderApp();
 
-
       // Try to add empty todo
       await page.getByRole("button", { name: /add/i }).click();
 
@@ -104,7 +114,6 @@ describe("Todo App - Component Integration Tests", () => {
 
     it("should add multiple todos", async () => {
       renderApp();
-
 
       const input = page.getByPlaceholder("Todo title");
       const addButton = page.getByRole("button", { name: /add/i });
@@ -131,7 +140,6 @@ describe("Todo App - Component Integration Tests", () => {
     it("should toggle todo completion", async () => {
       renderApp();
 
-
       // Add a todo
       await page.getByPlaceholder("Todo title").fill("Complete me");
       await page.getByRole("button", { name: /add/i }).click();
@@ -150,7 +158,6 @@ describe("Todo App - Component Integration Tests", () => {
 
     it("should apply strikethrough style to completed todos", async () => {
       renderApp();
-
 
       // Add and complete a todo
       await page.getByPlaceholder("Todo title").fill("Completed todo");
@@ -172,7 +179,6 @@ describe("Todo App - Component Integration Tests", () => {
     it("should enter edit mode when clicking edit button", async () => {
       renderApp();
 
-
       // Add a todo
       await page.getByPlaceholder("Todo title").fill("Original title");
       await page.getByRole("button", { name: /add/i }).click();
@@ -181,13 +187,16 @@ describe("Todo App - Component Integration Tests", () => {
       await page.getByRole("button", { name: /edit/i }).click();
 
       // Should show save and cancel buttons
-      await expect.element(page.getByRole("button", { name: /save/i })).toBeInTheDocument();
-      await expect.element(page.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
+      await expect
+        .element(page.getByRole("button", { name: /save/i }))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByRole("button", { name: /cancel/i }))
+        .toBeInTheDocument();
     });
 
     it("should update todo title when saving", async () => {
       renderApp();
-
 
       // Add a todo
       await page.getByPlaceholder("Todo title").fill("Old title");
@@ -214,7 +223,6 @@ describe("Todo App - Component Integration Tests", () => {
     it("should cancel editing without saving changes", async () => {
       renderApp();
 
-
       // Add a todo
       await page.getByPlaceholder("Todo title").fill("Original title");
       await page.getByRole("button", { name: /add/i }).click();
@@ -230,15 +238,18 @@ describe("Todo App - Component Integration Tests", () => {
       await page.getByRole("button", { name: /cancel/i }).click();
 
       // Should still show original title
-      await expect.element(page.getByText("Original title")).toBeInTheDocument();
-      await expect.element(page.getByText("Modified title")).not.toBeInTheDocument();
+      await expect
+        .element(page.getByText("Original title"))
+        .toBeInTheDocument();
+      await expect
+        .element(page.getByText("Modified title"))
+        .not.toBeInTheDocument();
     });
   });
 
   describe("Deleting Todos", () => {
     it("should delete a todo when clicking delete button", async () => {
       renderApp();
-
 
       // Add a todo
       await page.getByPlaceholder("Todo title").fill("To be deleted");
@@ -251,13 +262,14 @@ describe("Todo App - Component Integration Tests", () => {
       await page.getByRole("button", { name: /delete/i }).click();
 
       // Should be removed
-      await expect.element(page.getByText("To be deleted")).not.toBeInTheDocument();
+      await expect
+        .element(page.getByText("To be deleted"))
+        .not.toBeInTheDocument();
       await expect.element(page.getByText("No todos yet.")).toBeInTheDocument();
     });
 
     it("should delete the correct todo when multiple exist", async () => {
       renderApp();
-
 
       const input = page.getByPlaceholder("Todo title");
       const addButton = page.getByRole("button", { name: /add/i });
@@ -276,12 +288,16 @@ describe("Todo App - Component Integration Tests", () => {
       await expect.element(page.getByText("Third todo")).toBeInTheDocument();
 
       // Delete the second one (middle one in the list)
-      const deleteButtons = page.getByRole("button", { name: /delete/i }).elements();
+      const deleteButtons = page
+        .getByRole("button", { name: /delete/i })
+        .elements();
       await deleteButtons[1].click();
 
       // First and third should remain
       await expect.element(page.getByText("First todo")).toBeInTheDocument();
-      await expect.element(page.getByText("Second todo")).not.toBeInTheDocument();
+      await expect
+        .element(page.getByText("Second todo"))
+        .not.toBeInTheDocument();
       await expect.element(page.getByText("Third todo")).toBeInTheDocument();
     });
   });
@@ -289,7 +305,6 @@ describe("Todo App - Component Integration Tests", () => {
   describe("Full CRUD Flow", () => {
     it("should complete full todo lifecycle", async () => {
       renderApp();
-
 
       // 1. Add a todo
       await page.getByPlaceholder("Todo title").fill("Learn Vitest");
@@ -310,7 +325,9 @@ describe("Todo App - Component Integration Tests", () => {
 
       // 4. Delete the todo
       await page.getByRole("button", { name: /delete/i }).click();
-      await expect.element(page.getByText("Master Vitest")).not.toBeInTheDocument();
+      await expect
+        .element(page.getByText("Master Vitest"))
+        .not.toBeInTheDocument();
       await expect.element(page.getByText("No todos yet.")).toBeInTheDocument();
     });
   });
@@ -319,14 +336,15 @@ describe("Todo App - Component Integration Tests", () => {
     it("should reactively update when todos change", async () => {
       renderApp();
 
-
       // Start with empty state
       await expect.element(page.getByText("No todos yet.")).toBeInTheDocument();
 
       // Add todo - should remove empty state
       await page.getByPlaceholder("Todo title").fill("New todo");
       await page.getByRole("button", { name: /add/i }).click();
-      await expect.element(page.getByText("No todos yet.")).not.toBeInTheDocument();
+      await expect
+        .element(page.getByText("No todos yet."))
+        .not.toBeInTheDocument();
 
       // Delete todo - should show empty state again
       await page.getByRole("button", { name: /delete/i }).click();

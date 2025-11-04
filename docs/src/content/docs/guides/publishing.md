@@ -142,11 +142,7 @@ Or use `files` field in `package.json`:
 
 ```json
 {
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ]
+  "files": ["dist", "README.md", "LICENSE"]
 }
 ```
 
@@ -203,15 +199,18 @@ Maintain a CHANGELOG.md:
 ## [1.0.0] - 2024-01-15
 
 ### Added
+
 - Initial release
 - Type-safe query builder
 - Zod schema validation
 - Vue 3 integration
 
 ### Fixed
+
 - Bug fix description
 
 ### Changed
+
 - Breaking change description
 ```
 
@@ -271,7 +270,7 @@ name: Publish to npm
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   publish:
@@ -286,7 +285,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: pnpm install

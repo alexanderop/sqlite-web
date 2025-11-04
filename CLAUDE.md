@@ -12,6 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 4. **Document** - Update Astro docs (`docs/src/content/docs/**/*.md`) with examples and API details
 
 **Test Writing Guidelines:**
+
 - Focus on the **main happy path** - test the primary use case first
 - Add **critical error cases** only (validation failures, constraint violations)
 - Avoid exhaustive edge case testing - trust the implementation for minor variations
@@ -19,6 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Example: For transactions, test basic commit/rollback, not every possible error combination
 
 **Documentation Rules:**
+
 - Keep CLAUDE.md minimal - only essential context for development
 - All feature documentation, examples, and usage patterns go in Astro docs
 - After implementing a feature, always update relevant docs pages
@@ -75,6 +77,7 @@ The core package wraps sqlite-wasm's worker-based API with a type-safe query bui
   - `exec()` and `raw()`: Direct SQL access for advanced usage
 
 Key implementation details:
+
 - Schema registry provides compile-time type safety for table names, column names, and values
 - Query builder methods (`where`, `select`, `orderBy`, `limit`, `skip`) are fully typed
 - Results use `rowMode: "object"` to return objects instead of arrays
@@ -83,6 +86,7 @@ Key implementation details:
 - Each client instance maintains its own worker and database connection
 
 **Type System Architecture**:
+
 - `SchemaRegistry`: Maps table names to Zod schemas
 - `TableRow<TSchema, TTable>`: Infers row type from schema
 - `QueryResult<TRow, TSelected>`: Conditional type for select projection

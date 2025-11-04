@@ -51,11 +51,13 @@ pnpm dev:vue
 ## Publishing
 
 1. Build all packages:
+
    ```bash
    pnpm -r run build
    ```
 
 2. Publish core package:
+
    ```bash
    cd packages/core
    npm publish --access public

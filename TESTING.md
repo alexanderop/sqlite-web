@@ -105,6 +105,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
       },
     });
     ```
+
   </TabItem>
   <TabItem label="Package Scripts">
     ```json title="package.json"
@@ -125,7 +126,8 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
   - `Cross-Origin-Opener-Policy: same-origin`
   - `Cross-Origin-Embedder-Policy: require-corp`
 
-  These are already configured in the Vite server settings above.
+These are already configured in the Vite server settings above.
+
 </Aside>
 
 ## Test Suite
@@ -141,6 +143,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     - Render input field and add button
 
     <Badge text="3 tests" size="small" />
+
   </Card>
 
   <Card title="Adding Todos" icon="add-document">
@@ -150,6 +153,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     - Add multiple todos
 
     <Badge text="4 tests" size="small" />
+
   </Card>
 
   <Card title="Completing Todos" icon="approve-check-circle">
@@ -157,6 +161,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     - Apply strikethrough style to completed todos
 
     <Badge text="2 tests" size="small" />
+
   </Card>
 
   <Card title="Editing Todos" icon="pencil">
@@ -165,6 +170,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     - Cancel editing without saving changes
 
     <Badge text="3 tests" size="small" />
+
   </Card>
 
   <Card title="Deleting Todos" icon="error">
@@ -172,18 +178,21 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     - Delete the correct todo when multiple exist
 
     <Badge text="2 tests" size="small" />
+
   </Card>
 
   <Card title="Full CRUD Flow" icon="rocket">
     - Complete full todo lifecycle (add → edit → complete → delete)
 
     <Badge text="1 test" size="small" />
+
   </Card>
 
   <Card title="Reactivity" icon="random">
     - Reactively update when todos change
 
     <Badge text="1 test" size="small" />
+
   </Card>
 </CardGrid>
 
@@ -209,7 +218,9 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
      const sqlitePlugin = createSQLite({
        schema: dbSchema,
        filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`,
-       migrations: [/* ... */],
+       migrations: [
+         /* ... */
+       ],
      });
 
      return render(App, {
@@ -325,6 +336,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     # Run only Vue app tests
     pnpm test:vue-app
     ```
+
   </TabItem>
 
   <TabItem label="From Vue App" icon="seti:vue">
@@ -340,6 +352,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     # Interactive UI with browser view
     pnpm test:ui
     ```
+
   </TabItem>
 
   <TabItem label="With Options" icon="setting">
@@ -356,6 +369,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     # Run with specific reporter
     pnpm test:run --reporter=verbose
     ```
+
   </TabItem>
 </Tabs>
 
@@ -374,31 +388,37 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     Test runner and framework
 
     `^4.0.6`
+
   </Card>
   <Card title="@vitest/browser" icon="laptop">
     Browser mode support
 
     `^4.0.6`
+
   </Card>
   <Card title="@vitest/browser-playwright" icon="seti:playwright">
     Playwright provider
 
     `^4.0.6`
+
   </Card>
   <Card title="@vitest/ui" icon="laptop">
     Interactive test UI
 
     `^4.0.6`
+
   </Card>
   <Card title="playwright" icon="seti:playwright">
     Browser automation
 
     `^1.56.1`
+
   </Card>
   <Card title="vitest-browser-vue" icon="seti:vue">
     Vue component rendering
 
     `^2.0.1`
+
   </Card>
 </CardGrid>
 
@@ -411,7 +431,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
    Each test creates a fresh SQLite database with a unique filename using `crypto.randomUUID()`, ensuring complete isolation between tests.
 
    ```typescript
-   filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`
+   filename: `file:test-${crypto.randomUUID()}.sqlite3?vfs=opfs`;
    ```
 
 2. **Plugin Installation**
@@ -535,6 +555,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     Add `toMatchScreenshot()` assertions to catch visual regressions in UI components.
 
     <Badge text="Coming Soon" variant="note" />
+
   </Card>
 
   <Card title="Multi-Browser Testing" icon="laptop">
@@ -547,6 +568,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
       { browser: "webkit" },
     ]
     ```
+
   </Card>
 
   <Card title="Performance Benchmarks" icon="rocket">
@@ -568,6 +590,7 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     - name: Run Tests
       run: pnpm test:run
     ```
+
   </Card>
 </CardGrid>
 
@@ -578,24 +601,28 @@ The testing setup uses **Vitest Browser Mode** with **Playwright** to run real b
     Official documentation for browser testing with Vitest.
 
     [View Docs →](https://vitest.dev/guide/browser/)
+
   </Card>
 
   <Card title="Playwright Locators" icon="external">
     Learn about Playwright's powerful element selection API.
 
     [View Docs →](https://playwright.dev/docs/locators)
+
   </Card>
 
   <Card title="Testing Library" icon="external">
     Query methods that encourage good testing practices.
 
     [View Docs →](https://testing-library.com/docs/queries/about)
+
   </Card>
 
   <Card title="Vue Test Utils" icon="external">
     Official testing utilities for Vue 3 components.
 
     [View Docs →](https://test-utils.vuejs.org/)
+
   </Card>
 </CardGrid>
 

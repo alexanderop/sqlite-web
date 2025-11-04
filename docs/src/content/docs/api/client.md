@@ -12,7 +12,7 @@ Creates a new SQLite client instance.
 ```typescript
 function createSQLiteClient<TSchema extends SchemaRegistry>(
   config: SQLiteConfig<TSchema>
-): Promise<SQLiteClient<TSchema>>
+): Promise<SQLiteClient<TSchema>>;
 ```
 
 ### Parameters
@@ -45,23 +45,23 @@ interface Migration {
 ### Example
 
 ```typescript
-import { createSQLiteClient } from '@alexop/sqlite-core';
-import { z } from 'zod';
+import { createSQLiteClient } from "@alexop/sqlite-core";
+import { z } from "zod";
 
 const db = await createSQLiteClient({
   schema: {
     users: z.object({
       id: z.string(),
       name: z.string(),
-    })
+    }),
   } as const,
-  filename: 'file:app.sqlite3?vfs=opfs',
+  filename: "file:app.sqlite3?vfs=opfs",
   migrations: [
     {
       version: 1,
-      sql: 'CREATE TABLE users (id TEXT PRIMARY KEY, name TEXT NOT NULL)'
-    }
-  ]
+      sql: "CREATE TABLE users (id TEXT PRIMARY KEY, name TEXT NOT NULL)",
+    },
+  ],
 });
 ```
 
@@ -86,9 +86,10 @@ A `QueryBuilder` instance for chaining query methods.
 ### Example
 
 ```typescript
-const users = await db.query('users')
-  .where('age', '>', 18)
-  .orderBy('name', 'ASC')
+const users = await db
+  .query("users")
+  .where("age", ">", 18)
+  .orderBy("name", "ASC")
   .all();
 ```
 
@@ -113,10 +114,10 @@ An `InsertBuilder` instance for specifying values.
 ### Example
 
 ```typescript
-await db.insert('users').values({
+await db.insert("users").values({
   id: crypto.randomUUID(),
-  name: 'Alice',
-  age: 30
+  name: "Alice",
+  age: 30,
 });
 ```
 
@@ -141,10 +142,7 @@ An `UpdateBuilder` instance for specifying conditions and values.
 ### Example
 
 ```typescript
-await db.update('users')
-  .where('id', '=', '123')
-  .set({ age: 31 })
-  .execute();
+await db.update("users").where("id", "=", "123").set({ age: 31 }).execute();
 ```
 
 ## delete
@@ -168,9 +166,7 @@ A `DeleteBuilder` instance for specifying conditions.
 ### Example
 
 ```typescript
-await db.delete('users')
-  .where('id', '=', '123')
-  .execute();
+await db.delete("users").where("id", "=", "123").execute();
 ```
 
 ## raw
@@ -201,7 +197,7 @@ interface UserCount {
 }
 
 const result = await db.raw<UserCount>(
-  'SELECT COUNT(*) as count FROM users WHERE age > ?',
+  "SELECT COUNT(*) as count FROM users WHERE age > ?",
   [18]
 );
 
@@ -227,8 +223,8 @@ exec(sql: string): Promise<void>
 ### Example
 
 ```typescript
-await db.exec('PRAGMA foreign_keys = ON');
-await db.exec('DELETE FROM users WHERE age < 18');
+await db.exec("PRAGMA foreign_keys = ON");
+await db.exec("DELETE FROM users WHERE age < 18");
 ```
 
 ## subscribeToTable
@@ -254,8 +250,8 @@ Unsubscribe function
 ### Example
 
 ```typescript
-const unsubscribe = db.subscribeToTable('users', () => {
-  console.log('Users table changed!');
+const unsubscribe = db.subscribeToTable("users", () => {
+  console.log("Users table changed!");
 });
 
 // Later, cleanup
@@ -306,19 +302,19 @@ Multiple calls to `close()` are safe (idempotent) - subsequent calls will return
 ```typescript
 const db = await createSQLiteClient({
   schema: { users: userSchema },
-  filename: 'file:app.sqlite3?vfs=opfs',
-  migrations: []
+  filename: "file:app.sqlite3?vfs=opfs",
+  migrations: [],
 });
 
 // Use database...
-await db.query('users').all();
+await db.query("users").all();
 
 // Clean up resources when done
 await db.close();
 
 // Subsequent operations will throw
 try {
-  await db.query('users').all();
+  await db.query("users").all();
 } catch (error) {
   console.error(error.message); // "Database is closed"
 }
@@ -329,7 +325,7 @@ try {
 **Testing:** Clean up between tests to avoid resource leaks
 
 ```typescript
-import { afterEach } from 'vitest';
+import { afterEach } from "vitest";
 
 let db: SQLiteClient<typeof schema>;
 
@@ -554,7 +550,7 @@ Infers the row type from a schema.
 ```typescript
 type TableRow<
   TSchema extends SchemaRegistry,
-  TTable extends keyof TSchema
+  TTable extends keyof TSchema,
 > = z.infer<TSchema[TTable]>;
 ```
 
@@ -563,8 +559,10 @@ type TableRow<
 Result type for queries with optional select.
 
 ```typescript
-type QueryResult<TRow, TSelected extends keyof TRow | never = never> =
-  TSelected extends never ? TRow : Pick<TRow, TSelected>;
+type QueryResult<
+  TRow,
+  TSelected extends keyof TRow | never = never,
+> = TSelected extends never ? TRow : Pick<TRow, TSelected>;
 ```
 
 ## Next Steps

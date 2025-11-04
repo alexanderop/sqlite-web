@@ -24,16 +24,16 @@ const client = await createSQLiteClient({
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL
         );
-      `
-    }
-  ]
+      `,
+    },
+  ],
 });
 
 // Execute queries
-await client.exec(
-  "INSERT INTO users (id, name) VALUES (?, ?)",
-  ["1", "John Doe"]
-);
+await client.exec("INSERT INTO users (id, name) VALUES (?, ?)", [
+  "1",
+  "John Doe",
+]);
 
 // Query data
 const users = await client.query("SELECT * FROM users");
@@ -58,6 +58,7 @@ unsubscribe();
 Creates a new SQLite client instance.
 
 **Options:**
+
 - `filename` (string): Database filename. Use `file:name.sqlite3?vfs=opfs` for persistent OPFS storage
 - `migrations` (Migration[]): Optional array of migrations to run on initialization
 
@@ -66,6 +67,7 @@ Creates a new SQLite client instance.
 ### `SQLiteClient`
 
 **Methods:**
+
 - `exec(sql, params?)`: Execute SQL statement
 - `query<T>(sql, params?)`: Execute query and return results
 - `notifyTable(table)`: Notify subscribers that a table changed

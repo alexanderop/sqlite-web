@@ -2,8 +2,5 @@
   // Root configuration for TypeScript project references
   // This allows tsc --build to type-check all packages with proper dependency order
   "files": [],
-  "references": [
-    { "path": "./packages/core" },
-    { "path": "./packages/vue" }
-  ]
+  "references": [{ "path": "./packages/core" }, { "path": "./packages/vue" }]
 }

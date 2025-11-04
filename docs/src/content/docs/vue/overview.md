@@ -17,11 +17,16 @@ The `@alexop/sqlite-vue` package provides seamless Vue 3 integration with reacti
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useSQLiteQuery, useSQLiteClientAsync } from '@alexop/sqlite-vue';
+import { ref } from "vue";
+import { useSQLiteQuery, useSQLiteClientAsync } from "@alexop/sqlite-vue";
 
 // Get reactive query results
-const { rows: todos, loading, error, refresh } = useSQLiteQuery(
+const {
+  rows: todos,
+  loading,
+  error,
+  refresh,
+} = useSQLiteQuery(
   (db) => db.query("todos").orderBy("createdAt", "DESC").all(),
   { tables: ["todos"] }
 );
@@ -134,12 +139,12 @@ This is a Vue limitation, not a SQLite Web issue. See [Vue's inject() docs](http
 
 ## When to Use Which Package
 
-| Scenario | Package |
-|----------|---------|
-| Vue 3 application | `@alexop/sqlite-vue` |
-| React/Angular/Svelte | `@alexop/sqlite-core` |
-| Node.js backend | Not supported (browser-only) |
-| Vanilla JavaScript | `@alexop/sqlite-core` |
+| Scenario             | Package                      |
+| -------------------- | ---------------------------- |
+| Vue 3 application    | `@alexop/sqlite-vue`         |
+| React/Angular/Svelte | `@alexop/sqlite-core`        |
+| Node.js backend      | Not supported (browser-only) |
+| Vanilla JavaScript   | `@alexop/sqlite-core`        |
 
 ## Benefits Over Core Package
 

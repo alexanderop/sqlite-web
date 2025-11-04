@@ -54,19 +54,19 @@ SQLite WASM requires specific HTTP headers to enable `SharedArrayBuffer` support
 
 ```typescript
 // vite.config.ts
-import { defineConfig } from 'vite'
+import { defineConfig } from "vite";
 
 export default defineConfig({
   server: {
     headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp'
-    }
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
   },
   optimizeDeps: {
-    exclude: ['@sqlite.org/sqlite-wasm']
-  }
-})
+    exclude: ["@sqlite.org/sqlite-wasm"],
+  },
+});
 ```
 
 ### Other Build Tools

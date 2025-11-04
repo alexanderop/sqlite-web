@@ -16,7 +16,7 @@ await db.insert("todos").values({
   id: crypto.randomUUID(),
   title: "Buy groceries",
   completed: false,
-  createdAt: new Date().toISOString()
+  createdAt: new Date().toISOString(),
 });
 ```
 
@@ -31,13 +31,13 @@ const schema = {
     title: z.string(),
     completed: z.boolean().default(false),
     createdAt: z.string().default(() => new Date().toISOString()),
-  })
+  }),
 } as const;
 
 // completed and createdAt use defaults
 await db.insert("todos").values({
   id: crypto.randomUUID(),
-  title: "Buy groceries"
+  title: "Buy groceries",
 });
 ```
 
@@ -51,21 +51,21 @@ const schema = {
     id: z.string().uuid(),
     email: z.string().email(),
     age: z.number().min(0).max(150),
-  })
+  }),
 } as const;
 
 // ✅ Valid
 await db.insert("users").values({
   id: crypto.randomUUID(),
   email: "alice@example.com",
-  age: 30
+  age: 30,
 });
 
 // ❌ Throws ZodError - invalid email
 await db.insert("users").values({
   id: "123",
   email: "not-an-email",
-  age: 30
+  age: 30,
 });
 ```
 
@@ -78,20 +78,20 @@ TypeScript enforces correct field types:
 await db.insert("todos").values({
   id: "123",
   title: "Buy milk",
-  completed: false
+  completed: false,
 });
 
 // ❌ TypeScript error - missing required field 'title'
 await db.insert("todos").values({
   id: "123",
-  completed: false
+  completed: false,
 });
 
 // ❌ TypeScript error - wrong type for 'completed'
 await db.insert("todos").values({
   id: "123",
   title: "Buy milk",
-  completed: "yes"  // Should be boolean
+  completed: "yes", // Should be boolean
 });
 ```
 
@@ -102,7 +102,8 @@ Modify existing rows with `.update()`:
 ### Basic Update
 
 ```typescript
-await db.update("todos")
+await db
+  .update("todos")
   .where("id", "=", "123")
   .set({ completed: true })
   .execute();
@@ -113,12 +114,13 @@ await db.update("todos")
 Update multiple fields at once:
 
 ```typescript
-await db.update("todos")
+await db
+  .update("todos")
   .where("id", "=", "123")
   .set({
     title: "Updated title",
     completed: true,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   })
   .execute();
 ```
@@ -128,7 +130,8 @@ await db.update("todos")
 Use multiple `.where()` calls for complex conditions:
 
 ```typescript
-await db.update("todos")
+await db
+  .update("todos")
   .where("completed", "=", false)
   .where("priority", "=", "low")
   .set({ priority: "medium" })
@@ -141,16 +144,10 @@ Updates are also validated:
 
 ```typescript
 // ✅ Valid
-await db.update("users")
-  .where("id", "=", "123")
-  .set({ age: 31 })
-  .execute();
+await db.update("users").where("id", "=", "123").set({ age: 31 }).execute();
 
 // ❌ Throws ZodError - age out of range
-await db.update("users")
-  .where("id", "=", "123")
-  .set({ age: 200 })
-  .execute();
+await db.update("users").where("id", "=", "123").set({ age: 200 }).execute();
 ```
 
 ### Type Safety
@@ -159,21 +156,24 @@ TypeScript ensures you only update with valid fields and types:
 
 ```typescript
 // ✅ Valid - 'completed' exists and is boolean
-await db.update("todos")
+await db
+  .update("todos")
   .where("id", "=", "123")
   .set({ completed: true })
   .execute();
 
 // ❌ TypeScript error - 'invalid' field doesn't exist
-await db.update("todos")
+await db
+  .update("todos")
   .where("id", "=", "123")
   .set({ invalid: "value" })
   .execute();
 
 // ❌ TypeScript error - wrong type
-await db.update("todos")
+await db
+  .update("todos")
   .where("id", "=", "123")
-  .set({ completed: "yes" })  // Should be boolean
+  .set({ completed: "yes" }) // Should be boolean
   .execute();
 ```
 
@@ -184,9 +184,7 @@ Remove rows with `.delete()`:
 ### Basic Delete
 
 ```typescript
-await db.delete("todos")
-  .where("id", "=", "123")
-  .execute();
+await db.delete("todos").where("id", "=", "123").execute();
 ```
 
 ### Conditional Delete
@@ -195,20 +193,17 @@ Delete based on conditions:
 
 ```typescript
 // Delete all completed todos
-await db.delete("todos")
-  .where("completed", "=", true)
-  .execute();
+await db.delete("todos").where("completed", "=", true).execute();
 
 // Delete old todos
-await db.delete("todos")
-  .where("createdAt", "<", "2024-01-01")
-  .execute();
+await db.delete("todos").where("createdAt", "<", "2024-01-01").execute();
 ```
 
 ### Multiple Conditions
 
 ```typescript
-await db.delete("todos")
+await db
+  .delete("todos")
   .where("completed", "=", true)
   .where("createdAt", "<", "2024-01-01")
   .execute();
@@ -221,6 +216,7 @@ Be careful with `.delete()` without a `.where()` clause - it will delete ALL row
 // This deletes EVERYTHING
 await db.delete("todos").execute();
 ```
+
 :::
 
 ## Transactions
@@ -237,11 +233,11 @@ await db.transaction(async (tx) => {
   await tx.insert("users").values({
     id: "1",
     name: "Alice",
-    email: "alice@example.com"
+    email: "alice@example.com",
   });
   await tx.insert("profiles").values({
     userId: "1",
-    bio: "Developer"
+    bio: "Developer",
   });
   // Automatically commits if no errors
 });
@@ -254,11 +250,10 @@ Transactions are essential for operations that must be atomic:
 ```typescript
 await db.transaction(async (tx) => {
   // Get current balances
-  const sender = await tx.query("accounts")
-    .where("id", "=", senderId)
-    .first();
+  const sender = await tx.query("accounts").where("id", "=", senderId).first();
 
-  const receiver = await tx.query("accounts")
+  const receiver = await tx
+    .query("accounts")
     .where("id", "=", receiverId)
     .first();
 
@@ -268,12 +263,14 @@ await db.transaction(async (tx) => {
   }
 
   // Perform transfer
-  await tx.update("accounts")
+  await tx
+    .update("accounts")
     .where("id", "=", senderId)
     .set({ balance: sender.balance - amount })
     .execute();
 
-  await tx.update("accounts")
+  await tx
+    .update("accounts")
     .where("id", "=", receiverId)
     .set({ balance: receiver.balance + amount })
     .execute();
@@ -293,9 +290,9 @@ try {
   await tx.insert("users").values({ id: "1", name: "Alice" });
   await tx.insert("profiles").values({ userId: "1", bio: "Developer" });
 
-  await tx.commit();  // Commit changes
+  await tx.commit(); // Commit changes
 } catch (error) {
-  await tx.rollback();  // Rollback on error
+  await tx.rollback(); // Rollback on error
   throw error;
 }
 ```
@@ -313,15 +310,14 @@ await db.transaction(async (tx) => {
   await tx.insert("todos").values({ id: "1", title: "Task" });
 
   // ✅ Update
-  await tx.update("todos")
+  await tx
+    .update("todos")
     .where("id", "=", "1")
     .set({ completed: true })
     .execute();
 
   // ✅ Delete
-  await tx.delete("todos")
-    .where("completed", "=", true)
-    .execute();
+  await tx.delete("todos").where("completed", "=", true).execute();
 });
 ```
 
@@ -330,12 +326,13 @@ SQLite doesn't support nested transactions. You must commit or rollback a transa
 
 ```typescript
 const tx1 = await db.beginTransaction();
-const tx2 = await db.beginTransaction();  // ❌ Error: nested transaction
+const tx2 = await db.beginTransaction(); // ❌ Error: nested transaction
 
 // ✅ Correct: commit or rollback first
 await tx1.commit();
-const tx2 = await db.beginTransaction();  // Now OK
+const tx2 = await db.beginTransaction(); // Now OK
 ```
+
 :::
 
 ### Error Handling
@@ -346,7 +343,7 @@ Transactions automatically rollback on any error:
 try {
   await db.transaction(async (tx) => {
     await tx.insert("todos").values({ id: "1", title: "First" });
-    await tx.insert("todos").values({ id: "1", title: "Duplicate" });  // ❌ Primary key violation
+    await tx.insert("todos").values({ id: "1", title: "Duplicate" }); // ❌ Primary key violation
   });
 } catch (error) {
   // Transaction was automatically rolled back
@@ -364,13 +361,13 @@ try {
   await db.transaction(async (tx) => {
     await tx.insert("users").values({
       id: "1",
-      email: "alice@example.com"
+      email: "alice@example.com",
     });
 
     // ❌ Invalid email - throws ZodError
     await tx.insert("users").values({
       id: "2",
-      email: "not-an-email"
+      email: "not-an-email",
     });
   });
 } catch (error) {
@@ -391,7 +388,7 @@ Pass an array of objects to `.values()` to insert multiple rows at once:
 await db.insert("todos").values([
   { id: "1", title: "First task", completed: false },
   { id: "2", title: "Second task", completed: true },
-  { id: "3", title: "Third task", completed: false }
+  { id: "3", title: "Third task", completed: false },
 ]);
 ```
 
@@ -415,8 +412,8 @@ All rows are validated before insertion. If any row fails validation, none are i
 try {
   await db.insert("users").values([
     { id: 1, name: "Alice", email: "alice@example.com" },
-    { id: 2, name: "Bob", email: "not-an-email" },  // ❌ Invalid
-    { id: 3, name: "Charlie", email: "charlie@example.com" }
+    { id: 2, name: "Bob", email: "not-an-email" }, // ❌ Invalid
+    { id: 3, name: "Charlie", email: "charlie@example.com" },
   ]);
 } catch (error) {
   // No rows inserted - validation failed on second row
@@ -429,7 +426,7 @@ try {
 Batch insert handles empty arrays gracefully:
 
 ```typescript
-await db.insert("todos").values([]);  // No-op, returns 0
+await db.insert("todos").values([]); // No-op, returns 0
 ```
 
 ### Type Safety
@@ -440,13 +437,13 @@ TypeScript ensures all rows match the schema:
 // ✅ Valid - all rows have correct types
 await db.insert("todos").values([
   { id: "1", title: "Task 1" },
-  { id: "2", title: "Task 2" }
+  { id: "2", title: "Task 2" },
 ]);
 
 // ❌ TypeScript error - missing required field
 await db.insert("todos").values([
   { id: "1", title: "Task 1" },
-  { id: "2" }  // Missing 'title'
+  { id: "2" }, // Missing 'title'
 ]);
 ```
 
@@ -523,19 +520,18 @@ const schema = {
     id: z.string(),
     title: z.string(),
     deletedAt: z.string().nullable().default(null),
-  })
+  }),
 } as const;
 
 // Soft delete
-await db.update("todos")
+await db
+  .update("todos")
   .where("id", "=", "123")
   .set({ deletedAt: new Date().toISOString() })
   .execute();
 
 // Query only non-deleted
-const activeTodos = await db.query("todos")
-  .where("deletedAt", "=", null)
-  .all();
+const activeTodos = await db.query("todos").where("deletedAt", "=", null).all();
 ```
 
 ### Timestamps
@@ -549,22 +545,23 @@ const schema = {
     title: z.string(),
     createdAt: z.string().default(() => new Date().toISOString()),
     updatedAt: z.string().default(() => new Date().toISOString()),
-  })
+  }),
 } as const;
 
 // Create
 await db.insert("posts").values({
   id: crypto.randomUUID(),
-  title: "My post"
+  title: "My post",
   // createdAt and updatedAt auto-set
 });
 
 // Update
-await db.update("posts")
+await db
+  .update("posts")
   .where("id", "=", "123")
   .set({
     title: "Updated title",
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   })
   .execute();
 ```
@@ -575,13 +572,14 @@ Update locally, then sync to database:
 
 ```typescript
 // 1. Update local state immediately
-todos.value = todos.value.map(t =>
+todos.value = todos.value.map((t) =>
   t.id === id ? { ...t, completed: true } : t
 );
 
 // 2. Update database
 try {
-  await db.update("todos")
+  await db
+    .update("todos")
     .where("id", "=", id)
     .set({ completed: true })
     .execute();

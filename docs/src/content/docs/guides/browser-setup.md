@@ -24,23 +24,23 @@ The recommended setup for Vite projects:
 
 ```typescript
 // vite.config.ts
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'  // If using Vue
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue"; // If using Vue
 
 export default defineConfig({
   plugins: [vue()],
 
   server: {
     headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp'
-    }
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
   },
 
   optimizeDeps: {
-    exclude: ['@sqlite.org/sqlite-wasm']
-  }
-})
+    exclude: ["@sqlite.org/sqlite-wasm"],
+  },
+});
 ```
 
 ### Why exclude sqlite-wasm?
@@ -70,16 +70,16 @@ For webpack-based projects:
 module.exports = {
   devServer: {
     headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp'
-    }
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
   },
 
   // Exclude sqlite-wasm from bundling
   externals: {
-    '@sqlite.org/sqlite-wasm': 'commonjs @sqlite.org/sqlite-wasm'
-  }
-}
+    "@sqlite.org/sqlite-wasm": "commonjs @sqlite.org/sqlite-wasm",
+  },
+};
 ```
 
 ## esbuild
@@ -88,30 +88,33 @@ For esbuild:
 
 ```javascript
 // build.js
-import { build } from 'esbuild'
+import { build } from "esbuild";
 
 await build({
-  entryPoints: ['src/index.ts'],
+  entryPoints: ["src/index.ts"],
   bundle: true,
-  outfile: 'dist/bundle.js',
+  outfile: "dist/bundle.js",
 
   // Exclude sqlite-wasm
-  external: ['@sqlite.org/sqlite-wasm']
-})
+  external: ["@sqlite.org/sqlite-wasm"],
+});
 ```
 
 For dev server, use a plugin or middleware to add headers:
 
 ```javascript
-import { serve } from 'esbuild'
+import { serve } from "esbuild";
 
-const { host, port } = await serve({
-  servedir: 'dist',
-  onRequest: ({ headers }) => {
-    headers['Cross-Origin-Opener-Policy'] = 'same-origin'
-    headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
-  }
-}, {})
+const { host, port } = await serve(
+  {
+    servedir: "dist",
+    onRequest: ({ headers }) => {
+      headers["Cross-Origin-Opener-Policy"] = "same-origin";
+      headers["Cross-Origin-Embedder-Policy"] = "require-corp";
+    },
+  },
+  {}
+);
 ```
 
 ## Production Hosting

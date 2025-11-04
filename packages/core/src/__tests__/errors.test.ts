@@ -42,17 +42,19 @@ describe("Core Error Handling", () => {
   describe("ConstraintError", () => {
     it("should throw ConstraintError on UNIQUE constraint violation", async () => {
       // Insert a user
-      await db.exec(
-        "INSERT INTO users (name, email, age) VALUES (?, ?, ?)",
-        ["John Doe", "john@example.com", 30]
-      );
+      await db.exec("INSERT INTO users (name, email, age) VALUES (?, ?, ?)", [
+        "John Doe",
+        "john@example.com",
+        30,
+      ]);
 
       // Try to insert another user with same email
       try {
-        await db.exec(
-          "INSERT INTO users (name, email, age) VALUES (?, ?, ?)",
-          ["Jane Doe", "john@example.com", 25]
-        );
+        await db.exec("INSERT INTO users (name, email, age) VALUES (?, ?, ?)", [
+          "Jane Doe",
+          "john@example.com",
+          25,
+        ]);
         expect.fail("Should have thrown ConstraintError");
       } catch (error) {
         expect(error).toBeInstanceOf(ConstraintError);

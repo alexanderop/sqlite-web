@@ -5,6 +5,7 @@ This document explains how the SQLite library's type safety works and how to tes
 ## Overview
 
 The SQLite library provides **compile-time type safety** that catches errors like:
+
 - ❌ Typos in column names (e.g., `"idz"` instead of `"id"`)
 - ❌ Wrong value types (e.g., passing a number when a string is expected)
 - ❌ Invalid table names
@@ -41,64 +42,61 @@ await db.delete("todos").where("idz", "=", "123").execute();
 
 ```typescript
 // ✅ Valid column names in where()
-db.query("todos").where("id", "=", "123")
-db.query("todos").where("completed", "=", false)
+db.query("todos").where("id", "=", "123");
+db.query("todos").where("completed", "=", false);
 
 // ❌ TypeScript Error: Invalid column name
-db.query("todos").where("nonexistent", "=", "value")
+db.query("todos").where("nonexistent", "=", "value");
 
 // ✅ Valid column names in orderBy()
-db.query("todos").orderBy("createdAt", "DESC")
+db.query("todos").orderBy("createdAt", "DESC");
 
 // ❌ TypeScript Error: Invalid column name
-db.query("todos").orderBy("wrongColumn", "DESC")
+db.query("todos").orderBy("wrongColumn", "DESC");
 
 // ✅ Valid column names in select()
-db.query("todos").select("id", "title")
+db.query("todos").select("id", "title");
 
 // ❌ TypeScript Error: Invalid column name
-db.query("todos").select("badColumn")
+db.query("todos").select("badColumn");
 ```
 
 ### 2. Value Type Checking
 
 ```typescript
 // ✅ Correct types
-db.query("todos").where("id", "=", "string-value")  // id is string
-db.query("todos").where("completed", "=", true)     // completed is boolean
+db.query("todos").where("id", "=", "string-value"); // id is string
+db.query("todos").where("completed", "=", true); // completed is boolean
 
 // ❌ TypeScript Error: Wrong types
-db.query("todos").where("id", "=", 123)           // id expects string, not number
-db.query("todos").where("completed", "=", "true") // completed expects boolean, not string
+db.query("todos").where("id", "=", 123); // id expects string, not number
+db.query("todos").where("completed", "=", "true"); // completed expects boolean, not string
 ```
 
 ### 3. Update Builder (`update()`)
 
 ```typescript
 // ✅ Valid
-db.update("todos")
-  .where("id", "=", "123")
-  .set({ title: "Updated" })
-  .execute()
+db.update("todos").where("id", "=", "123").set({ title: "Updated" }).execute();
 
 // ❌ TypeScript Error: Invalid field name
-db.update("todos").where("wrongField", "=", "value")
+db.update("todos").where("wrongField", "=", "value");
 
 // ❌ TypeScript Error: Wrong type
-db.update("todos").set({ completed: "true" })  // expects boolean
+db.update("todos").set({ completed: "true" }); // expects boolean
 ```
 
 ### 4. Delete Builder (`delete()`)
 
 ```typescript
 // ✅ Valid
-db.delete("todos").where("id", "=", "123").execute()
+db.delete("todos").where("id", "=", "123").execute();
 
 // ❌ TypeScript Error: Typo in column name
-db.delete("todos").where("idz", "=", "123").execute()
+db.delete("todos").where("idz", "=", "123").execute();
 
 // ❌ TypeScript Error: Wrong value type
-db.delete("todos").where("id", "=", 123).execute()  // id is string, not number
+db.delete("todos").where("id", "=", 123).execute(); // id is string, not number
 ```
 
 ### 5. Insert Builder (`insert()`)
@@ -108,19 +106,19 @@ db.delete("todos").where("id", "=", 123).execute()  // id is string, not number
 db.insert("todos").values({
   id: "123",
   title: "Test",
-  completed: false
-})
+  completed: false,
+});
 
 // ❌ TypeScript Error: Wrong field type
 db.insert("todos").values({
-  id: 123,  // Should be string
-  title: "Test"
-})
+  id: 123, // Should be string
+  title: "Test",
+});
 
 // ❌ TypeScript Error: Unknown field
 db.insert("todos").values({
-  wrongField: "value"
-})
+  wrongField: "value",
+});
 ```
 
 ## Automated Type Testing
@@ -201,12 +199,14 @@ describe("DeleteBuilder - Type Safety", () => {
 ## Implementation Details
 
 The type system uses:
+
 - **Generic Type Parameters**: Preserve type information through method chains
 - **Conditional Types**: `QueryResult<TRow, TSelected>` narrows based on selected fields
 - **Type Inference**: `TableRow<TSchema, TTable>` extracts types from Zod schemas
 - **Mapped Types**: `keyof TRow` ensures only valid column names are accepted
 
 Key type definitions (in `src/types.ts`):
+
 - `SchemaRegistry`: Maps table names to Zod schemas
 - `TableRow<TSchema, TTable>`: Extracts row type from schema
 - `TableName<TSchema>`: Valid table names

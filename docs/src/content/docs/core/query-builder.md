@@ -20,12 +20,14 @@ Filter results with `.where()`:
 
 ```typescript
 // Single condition
-const completedTodos = await db.query("todos")
+const completedTodos = await db
+  .query("todos")
   .where("completed", "=", true)
   .all();
 
 // Multiple conditions (AND)
-const recentTodos = await db.query("todos")
+const recentTodos = await db
+  .query("todos")
   .where("completed", "=", false)
   .where("createdAt", ">", "2024-01-01")
   .all();
@@ -33,20 +35,20 @@ const recentTodos = await db.query("todos")
 
 ### Supported Operators
 
-| Operator | Example | Description |
-|----------|---------|-------------|
-| `=` | `.where("id", "=", "123")` | Equality |
-| `!=` | `.where("status", "!=", "deleted")` | Inequality |
-| `>` | `.where("age", ">", 18)` | Greater than |
-| `>=` | `.where("age", ">=", 18)` | Greater than or equal |
-| `<` | `.where("price", "<", 100)` | Less than |
-| `<=` | `.where("price", "<=", 100)` | Less than or equal |
-| `LIKE` | `.where("name", "LIKE", "%John%")` | Pattern matching |
-| `IN` | `.where("status", "IN", ["active", "pending"])` | Value in list |
-| `NOT IN` | `.where("status", "NOT IN", ["deleted", "spam"])` | Value not in list |
-| `IS NULL` | `.where("deletedAt", "IS NULL", null)` | Check for NULL values |
-| `IS NOT NULL` | `.where("deletedAt", "IS NOT NULL", null)` | Check for non-NULL values |
-| `BETWEEN` | `.where("age", "BETWEEN", [18, 65])` | Value in range (inclusive) |
+| Operator      | Example                                           | Description                |
+| ------------- | ------------------------------------------------- | -------------------------- |
+| `=`           | `.where("id", "=", "123")`                        | Equality                   |
+| `!=`          | `.where("status", "!=", "deleted")`               | Inequality                 |
+| `>`           | `.where("age", ">", 18)`                          | Greater than               |
+| `>=`          | `.where("age", ">=", 18)`                         | Greater than or equal      |
+| `<`           | `.where("price", "<", 100)`                       | Less than                  |
+| `<=`          | `.where("price", "<=", 100)`                      | Less than or equal         |
+| `LIKE`        | `.where("name", "LIKE", "%John%")`                | Pattern matching           |
+| `IN`          | `.where("status", "IN", ["active", "pending"])`   | Value in list              |
+| `NOT IN`      | `.where("status", "NOT IN", ["deleted", "spam"])` | Value not in list          |
+| `IS NULL`     | `.where("deletedAt", "IS NULL", null)`            | Check for NULL values      |
+| `IS NOT NULL` | `.where("deletedAt", "IS NOT NULL", null)`        | Check for non-NULL values  |
+| `BETWEEN`     | `.where("age", "BETWEEN", [18, 65])`              | Value in range (inclusive) |
 
 :::tip
 The `IN` and `NOT IN` operators accept an array of values and generate `WHERE column IN (?, ?, ...)` SQL.
@@ -58,14 +60,16 @@ By default, multiple `.where()` calls are combined with `AND`. Use `.orWhere()` 
 
 ```typescript
 // Get completed OR high priority todos
-const todos = await db.query("todos")
+const todos = await db
+  .query("todos")
   .where("completed", "=", true)
   .orWhere("priority", "=", "high")
   .all();
 // SQL: WHERE completed = 1 OR priority = 'high'
 
 // Mix AND and OR - conditions are evaluated left to right
-const todos = await db.query("todos")
+const todos = await db
+  .query("todos")
   .where("userId", "=", "user1")
   .where("completed", "=", false)
   .orWhere("priority", "=", "urgent")
@@ -81,7 +85,8 @@ Exclude multiple values:
 
 ```typescript
 // Get todos that are neither deleted nor spam
-const todos = await db.query("todos")
+const todos = await db
+  .query("todos")
   .where("status", "NOT IN", ["deleted", "spam"])
   .all();
 ```
@@ -92,12 +97,14 @@ Check for NULL or non-NULL values:
 
 ```typescript
 // Get active todos (not deleted)
-const activeTodos = await db.query("todos")
+const activeTodos = await db
+  .query("todos")
   .where("deletedAt", "IS NULL", null)
   .all();
 
 // Get deleted todos
-const deletedTodos = await db.query("todos")
+const deletedTodos = await db
+  .query("todos")
   .where("deletedAt", "IS NOT NULL", null)
   .all();
 ```
@@ -108,12 +115,11 @@ Filter values within a range:
 
 ```typescript
 // Get users between 18 and 65 years old
-const adults = await db.query("users")
-  .where("age", "BETWEEN", [18, 65])
-  .all();
+const adults = await db.query("users").where("age", "BETWEEN", [18, 65]).all();
 
 // Get orders from date range
-const orders = await db.query("orders")
+const orders = await db
+  .query("orders")
   .where("createdAt", "BETWEEN", ["2024-01-01", "2024-12-31"])
   .all();
 ```
@@ -128,20 +134,20 @@ Use callback functions to create grouped conditions with parentheses:
 
 ```typescript
 // Get todos that are (completed OR high priority) AND belong to user1
-const todos = await db.query("todos")
+const todos = await db
+  .query("todos")
   .where((qb) =>
-    qb.where("completed", "=", true)
-      .orWhere("priority", "=", "high")
+    qb.where("completed", "=", true).orWhere("priority", "=", "high")
   )
   .where("userId", "=", "user1")
   .all();
 // SQL: WHERE (completed = 1 OR priority = 'high') AND userId = 'user1'
 
 // Complex nested conditions
-const results = await db.query("todos")
+const results = await db
+  .query("todos")
   .where((qb) =>
-    qb.where("status", "=", "pending")
-      .orWhere("status", "=", "in-progress")
+    qb.where("status", "=", "pending").orWhere("status", "=", "in-progress")
   )
   .where("assignedTo", "=", currentUserId)
   .where("dueDate", "<", tomorrow)
@@ -158,15 +164,11 @@ Use `.select()` to choose specific columns:
 
 ```typescript
 // Select specific columns
-const titles = await db.query("todos")
-  .select("id", "title")
-  .all();
+const titles = await db.query("todos").select("id", "title").all();
 // Type: Array<{ id: string, title: string }>
 
 // Select single column
-const ids = await db.query("todos")
-  .select("id")
-  .all();
+const ids = await db.query("todos").select("id").all();
 // Type: Array<{ id: string }>
 ```
 
@@ -183,17 +185,14 @@ Sort results with `.orderBy()`:
 
 ```typescript
 // Ascending order (default)
-const todos = await db.query("todos")
-  .orderBy("createdAt", "ASC")
-  .all();
+const todos = await db.query("todos").orderBy("createdAt", "ASC").all();
 
 // Descending order
-const todos = await db.query("todos")
-  .orderBy("createdAt", "DESC")
-  .all();
+const todos = await db.query("todos").orderBy("createdAt", "DESC").all();
 
 // Multiple columns
-const todos = await db.query("todos")
+const todos = await db
+  .query("todos")
   .orderBy("completed", "ASC")
   .orderBy("createdAt", "DESC")
   .all();
@@ -205,19 +204,15 @@ Use `.limit()` and `.skip()` for pagination:
 
 ```typescript
 // Get first 10 results
-const page1 = await db.query("todos")
-  .limit(10)
-  .all();
+const page1 = await db.query("todos").limit(10).all();
 
 // Get next 10 results
-const page2 = await db.query("todos")
-  .skip(10)
-  .limit(10)
-  .all();
+const page2 = await db.query("todos").skip(10).limit(10).all();
 
 // Pagination helper
 function paginateTodos(page: number, pageSize: number) {
-  return db.query("todos")
+  return db
+    .query("todos")
     .skip(page * pageSize)
     .limit(pageSize)
     .all();
@@ -240,9 +235,7 @@ const todos = await db.query("todos").all();
 Returns the first matching row or `null`:
 
 ```typescript
-const todo = await db.query("todos")
-  .where("id", "=", "123")
-  .first();
+const todo = await db.query("todos").where("id", "=", "123").first();
 // Type: Todo | null
 
 if (todo) {
@@ -258,7 +251,8 @@ Returns the number of matching rows:
 const totalTodos = await db.query("todos").count();
 // Type: number
 
-const completedCount = await db.query("todos")
+const completedCount = await db
+  .query("todos")
   .where("completed", "=", true)
   .count();
 ```
@@ -280,12 +274,14 @@ const totalRevenue = await db.query("orders").sum("amount");
 // Type: number (returns 0 if no rows)
 
 // With WHERE clause
-const userTotal = await db.query("orders")
+const userTotal = await db
+  .query("orders")
   .where("userId", "=", "user123")
   .sum("amount");
 
 // Chainable with GROUP BY
-const userTotals = await db.query("orders")
+const userTotals = await db
+  .query("orders")
   .select("userId")
   .sum("amount", "total")
   .groupBy("userId")
@@ -303,12 +299,14 @@ const avgPrice = await db.query("products").avg("price");
 // Type: number (returns 0 if no rows)
 
 // With WHERE clause
-const avgRating = await db.query("reviews")
+const avgRating = await db
+  .query("reviews")
   .where("productId", "=", "prod123")
   .avg("rating");
 
 // Chainable with GROUP BY
-const avgsByCategory = await db.query("products")
+const avgsByCategory = await db
+  .query("products")
   .select("category")
   .avg("price", "avgPrice")
   .groupBy("category")
@@ -326,12 +324,14 @@ const lowestPrice = await db.query("products").min("price");
 // Type: number | null (returns null if no rows)
 
 // With WHERE clause
-const earliestDate = await db.query("orders")
+const earliestDate = await db
+  .query("orders")
   .where("status", "=", "completed")
   .min("createdAt");
 
 // Chainable with GROUP BY
-const minPrices = await db.query("products")
+const minPrices = await db
+  .query("products")
   .select("category")
   .min("price", "minPrice")
   .groupBy("category")
@@ -349,12 +349,14 @@ const highestPrice = await db.query("products").max("price");
 // Type: number | null (returns null if no rows)
 
 // With WHERE clause
-const latestDate = await db.query("orders")
+const latestDate = await db
+  .query("orders")
   .where("userId", "=", "user123")
   .max("createdAt");
 
 // Chainable with GROUP BY
-const maxPrices = await db.query("products")
+const maxPrices = await db
+  .query("products")
   .select("category")
   .max("price", "maxPrice")
   .groupBy("category")
@@ -368,7 +370,8 @@ Group results by one or more columns (must be used with aggregate functions):
 
 ```typescript
 // Group by single column
-const statusTotals = await db.query("orders")
+const statusTotals = await db
+  .query("orders")
   .select("status")
   .sum("amount", "total")
   .groupBy("status")
@@ -376,7 +379,8 @@ const statusTotals = await db.query("orders")
 // Returns: [{ status: "pending", total: 500 }, { status: "completed", total: 1200 }]
 
 // Group by multiple columns
-const userStatusTotals = await db.query("orders")
+const userStatusTotals = await db
+  .query("orders")
   .select("userId", "status")
   .sum("amount", "total")
   .groupBy("userId", "status")
@@ -384,7 +388,8 @@ const userStatusTotals = await db.query("orders")
 // Returns: [{ userId: "user1", status: "completed", total: 300 }, ...]
 
 // Multiple aggregates
-const stats = await db.query("orders")
+const stats = await db
+  .query("orders")
   .select("userId")
   .sum("amount", "total")
   .avg("amount", "average")
@@ -395,7 +400,8 @@ const stats = await db.query("orders")
 // Returns: [{ userId: "user1", total: 500, average: 100, minOrder: 50, maxOrder: 200 }]
 
 // With WHERE and ORDER BY
-const topUsers = await db.query("orders")
+const topUsers = await db
+  .query("orders")
   .where("status", "=", "completed")
   .select("userId")
   .sum("amount", "total")
@@ -410,11 +416,12 @@ When using `GROUP BY`, always call `.select()` to specify which columns you're g
 :::
 
 :::note
+
 - `sum()` and `avg()` return `0` when no rows match (not `null`)
 - `min()` and `max()` return `null` when no rows match
 - Terminal operations (without alias) execute immediately and return a Promise
 - Chainable operations (with alias) must be used with `groupBy()` and `.all()`
-:::
+  :::
 
 ### Common Aggregation Patterns
 
@@ -422,7 +429,8 @@ When using `GROUP BY`, always call `.select()` to specify which columns you're g
 
 ```typescript
 // Monthly revenue by category
-const monthlyRevenue = await db.query("orders")
+const monthlyRevenue = await db
+  .query("orders")
   .where("status", "=", "completed")
   .select("category", "month")
   .sum("amount", "revenue")
@@ -435,7 +443,8 @@ const monthlyRevenue = await db.query("orders")
 
 ```typescript
 // User activity statistics
-const userStats = await db.query("orders")
+const userStats = await db
+  .query("orders")
   .select("userId")
   .sum("amount", "totalSpent")
   .avg("amount", "avgOrderValue")
@@ -449,7 +458,8 @@ const userStats = await db.query("orders")
 
 ```typescript
 // Product price ranges by category
-const priceRanges = await db.query("products")
+const priceRanges = await db
+  .query("products")
   .where("inStock", "=", true)
   .select("category")
   .min("price", "minPrice")
@@ -464,7 +474,8 @@ const priceRanges = await db.query("products")
 Chain methods to build complex queries:
 
 ```typescript
-const results = await db.query("todos")
+const results = await db
+  .query("todos")
   .where("completed", "=", false)
   .where("priority", "IN", ["high", "urgent"])
   .orderBy("createdAt", "DESC")
@@ -477,6 +488,7 @@ const results = await db.query("todos")
 ```
 
 The order of most methods doesn't matter, except:
+
 - `.select()` should come before `.all()` or `.first()`
 - `.limit()` and `.skip()` should come at the end
 - `.count()`, `.all()`, `.first()` must be last (they execute the query)
@@ -492,32 +504,32 @@ const dbSchema = {
     name: z.string(),
     email: z.string(),
     age: z.number(),
-  })
+  }),
 } as const;
 
 // ✅ Valid - 'users' table exists
-db.query("users")
+db.query("users");
 
 // ❌ TypeScript error - 'invalid' table doesn't exist
-db.query("invalid")
+db.query("invalid");
 
 // ✅ Valid - 'name' column exists
-db.query("users").where("name", "=", "Alice")
+db.query("users").where("name", "=", "Alice");
 
 // ❌ TypeScript error - 'invalid' column doesn't exist
-db.query("users").where("invalid", "=", "value")
+db.query("users").where("invalid", "=", "value");
 
 // ✅ Valid - string value for string column
-db.query("users").where("name", "=", "Alice")
+db.query("users").where("name", "=", "Alice");
 
 // ❌ TypeScript error - number value for string column
-db.query("users").where("name", "=", 42)
+db.query("users").where("name", "=", 42);
 
 // ✅ Valid - selecting existing columns
-db.query("users").select("id", "name")
+db.query("users").select("id", "name");
 
 // ❌ TypeScript error - selecting non-existent column
-db.query("users").select("invalid")
+db.query("users").select("invalid");
 ```
 
 ## Type Narrowing Methods
@@ -538,16 +550,15 @@ interface UserWithProfile {
 }
 
 // Cast to custom type
-const user = await db.query("users")
+const user = await db
+  .query("users")
   .where("id", "=", userId)
   .$castTo<UserWithProfile>()
   .first();
 // Type: UserWithProfile | null
 
 // Works with all execution methods
-const users = await db.query("users")
-  .$castTo<UserWithProfile>()
-  .all();
+const users = await db.query("users").$castTo<UserWithProfile>().all();
 // Type: UserWithProfile[]
 ```
 
@@ -566,11 +577,12 @@ const schema = {
     name: z.string(),
     email: z.string().nullable(),
     age: z.number().nullable(),
-  })
+  }),
 } as const;
 
 // After IS NOT NULL check, email is guaranteed non-null
-const users = await db.query("users")
+const users = await db
+  .query("users")
   .where("email", "IS NOT NULL", null)
   .$notNull()
   .all();
@@ -578,7 +590,8 @@ const users = await db.query("users")
 // (null removed from email and age)
 
 // Without $notNull, email would be: string | null
-const usersWithNull = await db.query("users")
+const usersWithNull = await db
+  .query("users")
   .where("email", "IS NOT NULL", null)
   .all();
 // Type: Array<{ id: string, name: string, email: string | null, age: number | null }>
@@ -595,11 +608,12 @@ const schema = {
     name: z.string(),
     email: z.string().nullable(),
     age: z.number().nullable(),
-  })
+  }),
 } as const;
 
 // Only narrow the email field
-const users = await db.query("users")
+const users = await db
+  .query("users")
   .where("email", "IS NOT NULL", null)
   .$narrowType<{ email: string }>()
   .all();
@@ -607,7 +621,8 @@ const users = await db.query("users")
 // email is narrowed to string, age remains nullable
 
 // Narrow multiple fields
-const activeUsers = await db.query("users")
+const activeUsers = await db
+  .query("users")
   .where("email", "IS NOT NULL", null)
   .where("age", "IS NOT NULL", null)
   .$narrowType<{ email: string; age: number }>()
@@ -618,15 +633,18 @@ const activeUsers = await db.query("users")
 ### When to Use Type Narrowing
 
 **Use `$castTo` when:**
+
 - Joining data from multiple tables (via raw SQL)
 - Working with complex computed columns
 - The result structure differs significantly from the table schema
 
 **Use `$notNull` when:**
+
 - Filtering out NULL values with `IS NOT NULL`
 - You know all nullable fields are non-null
 
 **Use `$narrowType` when:**
+
 - You only want to narrow specific fields
 - Some nullable fields should remain nullable
 - You need fine-grained control over type narrowing
@@ -637,7 +655,8 @@ Type narrowing methods work seamlessly with all query builder methods:
 
 ```typescript
 // Chain with where, orderBy, limit
-const results = await db.query("users")
+const results = await db
+  .query("users")
   .where("email", "IS NOT NULL", null)
   .where("status", "=", "active")
   .$notNull()
@@ -646,7 +665,8 @@ const results = await db.query("users")
   .all();
 
 // Use with select()
-const emails = await db.query("users")
+const emails = await db
+  .query("users")
   .where("email", "IS NOT NULL", null)
   .$narrowType<{ email: string }>()
   .select("email")
@@ -654,7 +674,8 @@ const emails = await db.query("users")
 // Type: Array<{ email: string }>
 
 // Combine with first()
-const user = await db.query("users")
+const user = await db
+  .query("users")
   .where("email", "IS NOT NULL", null)
   .$notNull()
   .first();
@@ -673,7 +694,8 @@ Store query builders for reuse:
 
 ```typescript
 function getActiveTodos() {
-  return db.query("todos")
+  return db
+    .query("todos")
     .where("completed", "=", false)
     .where("deletedAt", "=", null);
 }
@@ -732,7 +754,7 @@ const results = await searchTodos({
   priorities: ["high", "urgent"],
   excludeStatuses: ["spam", "archived"],
   search: "bug",
-  includeDeleted: false
+  includeDeleted: false,
 });
 ```
 
@@ -757,7 +779,7 @@ async function paginate<T>(
     page,
     pageSize,
     total,
-    totalPages: Math.ceil(total / pageSize)
+    totalPages: Math.ceil(total / pageSize),
   };
 }
 

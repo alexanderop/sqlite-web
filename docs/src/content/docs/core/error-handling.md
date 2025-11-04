@@ -12,15 +12,16 @@ SQLite Web provides custom error classes that make it easier to handle different
 The base error class for all SQLite-related errors.
 
 **Properties:**
+
 - `code: string` - Error code identifying the type of error
 - `sql?: string` - The SQL statement that caused the error (when applicable)
 - `message: string` - Human-readable error message
 
 ```typescript
-import { SQLiteError } from '@alexop/sqlite-core';
+import { SQLiteError } from "@alexop/sqlite-core";
 
 try {
-  await db.exec('INVALID SQL SYNTAX');
+  await db.exec("INVALID SQL SYNTAX");
 } catch (error) {
   if (error instanceof SQLiteError) {
     console.log(`Error code: ${error.code}`);
@@ -35,25 +36,26 @@ try {
 Thrown when Zod schema validation fails during insert or update operations.
 
 **Properties:**
+
 - All properties from `SQLiteError`
 - `field: string` - The field name that failed validation
 - `issues: ZodIssue[]` - Array of Zod validation issues with detailed error information
 
 ```typescript
-import { ValidationError } from '@alexop/sqlite-core';
+import { ValidationError } from "@alexop/sqlite-core";
 
 try {
-  await db.insert('users').values({
-    email: 'invalid-email',  // Not a valid email
-    age: -5                   // Negative age
+  await db.insert("users").values({
+    email: "invalid-email", // Not a valid email
+    age: -5, // Negative age
   });
 } catch (error) {
   if (error instanceof ValidationError) {
     console.log(`Field '${error.field}' failed validation`);
 
     // Loop through all validation issues
-    error.issues.forEach(issue => {
-      console.log(`- ${issue.path.join('.')}: ${issue.message}`);
+    error.issues.forEach((issue) => {
+      console.log(`- ${issue.path.join(".")}: ${issue.message}`);
     });
   }
 }
@@ -64,21 +66,22 @@ try {
 Thrown when a database constraint is violated (UNIQUE, FOREIGN KEY, NOT NULL, CHECK).
 
 **Properties:**
+
 - All properties from `SQLiteError`
 - `constraint: string` - Description of the constraint that was violated
 
 ```typescript
-import { ConstraintError } from '@alexop/sqlite-core';
+import { ConstraintError } from "@alexop/sqlite-core";
 
 try {
   // Try to insert duplicate email
-  await db.insert('users').values({
-    email: 'duplicate@example.com'
+  await db.insert("users").values({
+    email: "duplicate@example.com",
   });
 } catch (error) {
   if (error instanceof ConstraintError) {
-    if (error.constraint.includes('UNIQUE')) {
-      console.log('This email is already registered');
+    if (error.constraint.includes("UNIQUE")) {
+      console.log("This email is already registered");
     }
   }
 }
@@ -95,15 +98,15 @@ const schema = {
   users: z.object({
     name: z.string().min(3),
     email: z.string().email(),
-    age: z.number().min(0).max(150)
-  })
+    age: z.number().min(0).max(150),
+  }),
 };
 
 try {
-  await db.insert('users').values({
-    name: 'Jo',              // Too short (min 3 characters)
-    email: 'not-an-email',   // Invalid email format
-    age: 200                 // Too large (max 150)
+  await db.insert("users").values({
+    name: "Jo", // Too short (min 3 characters)
+    email: "not-an-email", // Invalid email format
+    age: 200, // Too large (max 150)
   });
 } catch (error) {
   if (error instanceof ValidationError) {
@@ -111,9 +114,9 @@ try {
     console.error(`Validation failed: ${error.message}`);
 
     // Get all field errors
-    const fieldErrors = error.issues.map(issue => ({
-      field: issue.path.join('.'),
-      message: issue.message
+    const fieldErrors = error.issues.map((issue) => ({
+      field: issue.path.join("."),
+      message: issue.message,
     }));
 
     console.table(fieldErrors);
@@ -127,21 +130,21 @@ try {
 
 ```typescript
 // First user
-await db.insert('users').values({
-  email: 'user@example.com',
-  name: 'John Doe'
+await db.insert("users").values({
+  email: "user@example.com",
+  name: "John Doe",
 });
 
 // Try to insert duplicate email
 try {
-  await db.insert('users').values({
-    email: 'user@example.com',  // Duplicate!
-    name: 'Jane Doe'
+  await db.insert("users").values({
+    email: "user@example.com", // Duplicate!
+    name: "Jane Doe",
   });
 } catch (error) {
   if (error instanceof ConstraintError) {
-    if (error.constraint.includes('UNIQUE')) {
-      console.log('Email already exists');
+    if (error.constraint.includes("UNIQUE")) {
+      console.log("Email already exists");
       // Show user a friendly message
     }
   }
@@ -152,15 +155,15 @@ try {
 
 ```typescript
 try {
-  await db.insert('posts').values({
-    userId: 999,  // Non-existent user
-    title: 'My Post',
-    content: 'Post content'
+  await db.insert("posts").values({
+    userId: 999, // Non-existent user
+    title: "My Post",
+    content: "Post content",
   });
 } catch (error) {
   if (error instanceof ConstraintError) {
-    if (error.constraint.includes('FOREIGN KEY')) {
-      console.log('Referenced user does not exist');
+    if (error.constraint.includes("FOREIGN KEY")) {
+      console.log("Referenced user does not exist");
     }
   }
 }
@@ -176,8 +179,8 @@ try {
   `);
 } catch (error) {
   if (error instanceof ConstraintError) {
-    if (error.constraint.includes('NOT NULL')) {
-      console.log('Required field is missing');
+    if (error.constraint.includes("NOT NULL")) {
+      console.log("Required field is missing");
     }
   }
 }
@@ -189,11 +192,11 @@ Generic SQL errors for syntax issues or invalid table names:
 
 ```typescript
 try {
-  await db.exec('SELECT * FROM non_existent_table');
+  await db.exec("SELECT * FROM non_existent_table");
 } catch (error) {
   if (error instanceof SQLiteError) {
-    if (error.code === 'SQL_ERROR') {
-      console.log('SQL execution failed:', error.message);
+    if (error.code === "SQL_ERROR") {
+      console.log("SQL execution failed:", error.message);
     }
   }
 }
@@ -207,17 +210,17 @@ Always use `instanceof` checks to determine the error type:
 
 ```typescript
 try {
-  await db.insert('users').values(userData);
+  await db.insert("users").values(userData);
 } catch (error) {
   if (error instanceof ValidationError) {
     // Handle validation errors
     return { success: false, errors: error.issues };
   } else if (error instanceof ConstraintError) {
     // Handle constraint violations
-    return { success: false, message: 'Duplicate entry' };
+    return { success: false, message: "Duplicate entry" };
   } else if (error instanceof SQLiteError) {
     // Handle other SQL errors
-    return { success: false, message: 'Database error' };
+    return { success: false, message: "Database error" };
   } else {
     // Handle unexpected errors
     throw error;
@@ -235,26 +238,26 @@ function getUserMessage(error: unknown): string {
     const field = error.field;
     const issue = error.issues[0];
 
-    if (issue.code === 'too_small') {
+    if (issue.code === "too_small") {
       return `${field} is too short`;
     }
-    if (issue.code === 'invalid_string' && issue.validation === 'email') {
-      return 'Please enter a valid email address';
+    if (issue.code === "invalid_string" && issue.validation === "email") {
+      return "Please enter a valid email address";
     }
 
     return `Invalid ${field}`;
   }
 
   if (error instanceof ConstraintError) {
-    if (error.constraint.includes('UNIQUE')) {
-      return 'This value is already taken';
+    if (error.constraint.includes("UNIQUE")) {
+      return "This value is already taken";
     }
-    if (error.constraint.includes('FOREIGN KEY')) {
-      return 'Referenced item does not exist';
+    if (error.constraint.includes("FOREIGN KEY")) {
+      return "Referenced item does not exist";
     }
   }
 
-  return 'An unexpected error occurred';
+  return "An unexpected error occurred";
 }
 ```
 
@@ -265,14 +268,14 @@ While showing user-friendly messages, log detailed errors for debugging:
 ```typescript
 async function createUser(userData: any) {
   try {
-    return await db.insert('users').values(userData);
+    return await db.insert("users").values(userData);
   } catch (error) {
     // Log detailed error for debugging
-    console.error('Failed to create user:', {
+    console.error("Failed to create user:", {
       error: error instanceof Error ? error.message : error,
       code: error instanceof SQLiteError ? error.code : undefined,
       sql: error instanceof SQLiteError ? error.sql : undefined,
-      issues: error instanceof ValidationError ? error.issues : undefined
+      issues: error instanceof ValidationError ? error.issues : undefined,
     });
 
     // Show user-friendly message
@@ -287,10 +290,10 @@ Example with Vue form handling:
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
-import { ValidationError, ConstraintError } from '@alexop/sqlite-core';
+import { ref } from "vue";
+import { ValidationError, ConstraintError } from "@alexop/sqlite-core";
 
-const form = ref({ name: '', email: '', age: 0 });
+const form = ref({ name: "", email: "", age: 0 });
 const errors = ref<Record<string, string>>({});
 
 async function handleSubmit() {
@@ -298,20 +301,20 @@ async function handleSubmit() {
 
   try {
     const db = await useSQLiteClientAsync();
-    await db.insert('users').values(form.value);
+    await db.insert("users").values(form.value);
 
     // Success!
-    alert('User created successfully');
+    alert("User created successfully");
   } catch (error) {
     if (error instanceof ValidationError) {
       // Map validation errors to form fields
-      error.issues.forEach(issue => {
+      error.issues.forEach((issue) => {
         const field = issue.path[0] as string;
         errors.value[field] = issue.message;
       });
     } else if (error instanceof ConstraintError) {
-      if (error.constraint.includes('UNIQUE')) {
-        errors.value.email = 'Email already registered';
+      if (error.constraint.includes("UNIQUE")) {
+        errors.value.email = "Email already registered";
       }
     }
   }
@@ -338,11 +341,11 @@ async function handleSubmit() {
 
 All errors include a `code` property:
 
-| Code | Description |
-|------|-------------|
-| `VALIDATION_ERROR` | Zod schema validation failed |
-| `CONSTRAINT_ERROR` | Database constraint violated |
-| `SQL_ERROR` | SQL syntax error or execution failure |
+| Code               | Description                           |
+| ------------------ | ------------------------------------- |
+| `VALIDATION_ERROR` | Zod schema validation failed          |
+| `CONSTRAINT_ERROR` | Database constraint violated          |
+| `SQL_ERROR`        | SQL syntax error or execution failure |
 
 ## Next Steps
 

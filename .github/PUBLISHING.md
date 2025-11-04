@@ -5,11 +5,13 @@ This repository uses GitHub Actions to automatically publish packages to npm whe
 ## How It Works
 
 ### 1. **Continuous Integration (CI)**
+
 - Runs on every PR and push to `main`
 - Executes type tests, builds, and unit tests
 - Ensures code quality before merging
 
 ### 2. **Automatic Publishing**
+
 - Triggers when `packages/*/package.json` files change on `main`
 - Only publishes if **all tests pass**
 - Detects which packages have version changes
@@ -40,6 +42,7 @@ This repository uses GitHub Actions to automatically publish packages to npm whe
 ### Method 1: Manual Version Bump (Recommended)
 
 1. **Update the version** in the package you want to publish:
+
    ```bash
    # For core package
    cd packages/core
@@ -53,6 +56,7 @@ This repository uses GitHub Actions to automatically publish packages to npm whe
 2. **Update the CHANGELOG.md** for the package with the changes
 
 3. **Commit and push to a branch**:
+
    ```bash
    git add .
    git commit -m "chore: release @alexop/sqlite-core@0.1.1"
@@ -79,6 +83,7 @@ We follow [Semantic Versioning](https://semver.org/):
 ### For Monorepo Packages
 
 When updating `@alexop/sqlite-vue`:
+
 1. If it requires a new version of `@alexop/sqlite-core`, publish core first
 2. Update the dependency in `packages/vue/package.json`:
    ```json
@@ -91,10 +96,12 @@ When updating `@alexop/sqlite-vue`:
 ## Workflow Details
 
 ### CI Workflow (`.github/workflows/ci.yml`)
+
 - **Triggers**: PRs and pushes to main
 - **Steps**: Install → Type tests → Build → Unit tests → Verify packaging
 
 ### Publish Workflow (`.github/workflows/publish.yml`)
+
 - **Triggers**: Push to main when `packages/*/package.json` changes
 - **Jobs**:
   1. **test**: Run full test suite
@@ -113,18 +120,22 @@ When updating `@alexop/sqlite-vue`:
 ## Troubleshooting
 
 ### "Version already exists on npm"
+
 - The workflow detects this and skips publishing
 - You need to bump the version number in package.json
 
 ### "NPM_TOKEN not found"
+
 - Make sure you added the `NPM_TOKEN` secret in GitHub repository settings
 - The token must have "Automation" permissions
 
 ### Tests failing
+
 - Publishing will not happen until tests pass
 - Fix the tests and push again
 
 ### Package not publishing
+
 - Check that `package.json` file was changed in the commit
 - Verify the version was actually incremented
 - Check GitHub Actions logs for details

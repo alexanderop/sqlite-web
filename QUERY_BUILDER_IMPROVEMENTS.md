@@ -15,6 +15,7 @@ Kysely is a production-tested TypeScript SQL query builder with excellent patter
 **Current Issue:** Our QueryBuilder mutates internal state, which can lead to unexpected behavior when query builders are reused.
 
 **Solution:** Implement Kysely's immutability pattern:
+
 - Freeze internal properties object
 - Return new QueryBuilder instances on each method call
 - Never mutate existing instances
@@ -23,25 +24,35 @@ Kysely is a production-tested TypeScript SQL query builder with excellent patter
 
 ```typescript
 interface QueryBuilderProps<TRow, TSelected> {
-  readonly executeQuery: <T = unknown>(sql: string, params: unknown[]) => Promise<T[]>
-  readonly tableName: string
-  readonly schema: z.ZodObject<z.ZodRawShape>
-  readonly whereClauses: readonly string[]
-  readonly whereParams: readonly unknown[]
-  readonly whereConjunctions: readonly ('AND' | 'OR')[]
-  readonly selectedFields: readonly string[] | undefined
-  readonly orderByClause: string | undefined
-  readonly limitCount: number | undefined
-  readonly offsetCount: number | undefined
-  readonly aggregates: ReadonlyArray<{ func: string; column: string; alias: string }>
-  readonly groupByFields: readonly string[]
+  readonly executeQuery: <T = unknown>(
+    sql: string,
+    params: unknown[]
+  ) => Promise<T[]>;
+  readonly tableName: string;
+  readonly schema: z.ZodObject<z.ZodRawShape>;
+  readonly whereClauses: readonly string[];
+  readonly whereParams: readonly unknown[];
+  readonly whereConjunctions: readonly ("AND" | "OR")[];
+  readonly selectedFields: readonly string[] | undefined;
+  readonly orderByClause: string | undefined;
+  readonly limitCount: number | undefined;
+  readonly offsetCount: number | undefined;
+  readonly aggregates: ReadonlyArray<{
+    func: string;
+    column: string;
+    alias: string;
+  }>;
+  readonly groupByFields: readonly string[];
 }
 
-export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undefined> {
-  readonly #props: QueryBuilderProps<TRow, TSelected>
+export class QueryBuilder<
+  TRow,
+  TSelected extends keyof TRow | undefined = undefined,
+> {
+  readonly #props: QueryBuilderProps<TRow, TSelected>;
 
   constructor(props: QueryBuilderProps<TRow, TSelected>) {
-    this.#props = Object.freeze(props)
+    this.#props = Object.freeze(props);
   }
 
   where<K extends keyof TRow>(
@@ -52,14 +63,18 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
     // Create new instance instead of mutating
     return new QueryBuilder({
       ...this.#props,
-      whereClauses: [...this.#props.whereClauses, `${String(field)} ${operator} ?`],
-      whereParams: [...this.#props.whereParams, value]
-    })
+      whereClauses: [
+        ...this.#props.whereClauses,
+        `${String(field)} ${operator} ?`,
+      ],
+      whereParams: [...this.#props.whereParams, value],
+    });
   }
 }
 ```
 
 **Benefits:**
+
 - Safe query builder reuse
 - Better testability
 - Prevents accidental mutations
@@ -73,8 +88,11 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
 
 **Implementation:**
 
-```typescript
-export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undefined> {
+````typescript
+export class QueryBuilder<
+  TRow,
+  TSelected extends keyof TRow | undefined = undefined,
+> {
   /**
    * Simply calls the provided function passing `this` as the only argument.
    * `$call` returns what the provided function returns.
@@ -97,12 +115,13 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
    * ```
    */
   $call<T>(func: (qb: this) => T): T {
-    return func(this)
+    return func(this);
   }
 }
-```
+````
 
 **Use Cases:**
+
 - Common filter combinations
 - Authentication/authorization filters
 - Soft delete patterns
@@ -116,8 +135,11 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
 
 **Implementation:**
 
-```typescript
-export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undefined> {
+````typescript
+export class QueryBuilder<
+  TRow,
+  TSelected extends keyof TRow | undefined = undefined,
+> {
   /**
    * Clears all WHERE conditions from the query.
    *
@@ -136,8 +158,8 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
       ...this.#props,
       whereClauses: [],
       whereParams: [],
-      whereConjunctions: []
-    })
+      whereConjunctions: [],
+    });
   }
 
   /**
@@ -146,8 +168,8 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
   clearOrderBy(): QueryBuilder<TRow, TSelected> {
     return new QueryBuilder({
       ...this.#props,
-      orderByClause: undefined
-    })
+      orderByClause: undefined,
+    });
   }
 
   /**
@@ -156,8 +178,8 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
   clearLimit(): QueryBuilder<TRow, TSelected> {
     return new QueryBuilder({
       ...this.#props,
-      limitCount: undefined
-    })
+      limitCount: undefined,
+    });
   }
 
   /**
@@ -166,8 +188,8 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
   clearOffset(): QueryBuilder<TRow, TSelected> {
     return new QueryBuilder({
       ...this.#props,
-      offsetCount: undefined
-    })
+      offsetCount: undefined,
+    });
   }
 
   /**
@@ -176,8 +198,8 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
   clearSelect(): QueryBuilder<TRow, undefined> {
     return new QueryBuilder({
       ...this.#props,
-      selectedFields: undefined
-    }) as any
+      selectedFields: undefined,
+    }) as any;
   }
 
   /**
@@ -186,13 +208,14 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
   clearGroupBy(): QueryBuilder<TRow, TSelected> {
     return new QueryBuilder({
       ...this.#props,
-      groupByFields: []
-    })
+      groupByFields: [],
+    });
   }
 }
-```
+````
 
 **Benefits:**
+
 - Dynamic query modification
 - Query template reuse
 - Conditional query building
@@ -206,8 +229,11 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
 
 **Implementation:**
 
-```typescript
-export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undefined> {
+````typescript
+export class QueryBuilder<
+  TRow,
+  TSelected extends keyof TRow | undefined = undefined,
+> {
   /**
    * Adds a WHERE clause where both sides of the operator are column references.
    *
@@ -235,16 +261,17 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
     rightField: K2
   ): QueryBuilder<TRow, TSelected> {
     // Build WHERE clause with both sides as column references
-    const clause = `${String(leftField)} ${operator} ${String(rightField)}`
+    const clause = `${String(leftField)} ${operator} ${String(rightField)}`;
 
     return new QueryBuilder({
       ...this.#props,
       whereClauses: [...this.#props.whereClauses, clause],
       // Note: No params added since both sides are column references
-      whereConjunctions: this.#props.whereClauses.length > 0
-        ? [...this.#props.whereConjunctions, 'AND']
-        : this.#props.whereConjunctions
-    })
+      whereConjunctions:
+        this.#props.whereClauses.length > 0
+          ? [...this.#props.whereConjunctions, "AND"]
+          : this.#props.whereConjunctions,
+    });
   }
 
   /**
@@ -255,18 +282,19 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
     operator: SQLOperator,
     rightField: K2
   ): QueryBuilder<TRow, TSelected> {
-    const clause = `${String(leftField)} ${operator} ${String(rightField)}`
+    const clause = `${String(leftField)} ${operator} ${String(rightField)}`;
 
     return new QueryBuilder({
       ...this.#props,
       whereClauses: [...this.#props.whereClauses, clause],
-      whereConjunctions: [...this.#props.whereConjunctions, 'OR']
-    })
+      whereConjunctions: [...this.#props.whereConjunctions, "OR"],
+    });
   }
 }
-```
+````
 
 **Use Cases:**
+
 - Self-referential comparisons
 - Date range validations
 - Audit trail queries
@@ -280,8 +308,11 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
 
 **Implementation:**
 
-```typescript
-export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undefined> {
+````typescript
+export class QueryBuilder<
+  TRow,
+  TSelected extends keyof TRow | undefined = undefined,
+> {
   /**
    * Conditionally call a function on the query builder.
    *
@@ -320,14 +351,15 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
     func: (qb: this) => QueryBuilder<TRow, any>
   ): QueryBuilder<TRow, TSelected> {
     if (condition) {
-      return func(this) as any
+      return func(this) as any;
     }
-    return this
+    return this;
   }
 }
-```
+````
 
 **Benefits:**
+
 - Cleaner code without if/else blocks
 - Maintains method chaining
 - Type-safe conditional queries
@@ -343,8 +375,11 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
 
 **Implementation:**
 
-```typescript
-export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undefined> {
+````typescript
+export class QueryBuilder<
+  TRow,
+  TSelected extends keyof TRow | undefined = undefined,
+> {
   /**
    * Change the output type of the query.
    *
@@ -362,7 +397,7 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
    * ```
    */
   $castTo<T>(): QueryBuilder<T, TSelected> {
-    return this as any
+    return this as any;
   }
 
   /**
@@ -380,10 +415,13 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
    * // Now users are typed without null in nullable fields
    * ```
    */
-  $notNull(): QueryBuilder<{
-    [K in keyof TRow]: NonNullable<TRow[K]>
-  }, TSelected> {
-    return this as any
+  $notNull(): QueryBuilder<
+    {
+      [K in keyof TRow]: NonNullable<TRow[K]>;
+    },
+    TSelected
+  > {
+    return this as any;
   }
 
   /**
@@ -401,16 +439,17 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
    */
   $narrowType<T extends Partial<TRow>>(): QueryBuilder<
     {
-      [K in keyof TRow]: K extends keyof T ? T[K] : TRow[K]
+      [K in keyof TRow]: K extends keyof T ? T[K] : TRow[K];
     },
     TSelected
   > {
-    return this as any
+    return this as any;
   }
 }
-```
+````
 
 **Use Cases:**
+
 - After NOT NULL checks
 - Custom type guards
 - Complex type transformations
@@ -424,7 +463,7 @@ export class QueryBuilder<TRow, TSelected extends keyof TRow | undefined = undef
 
 **Implementation:**
 
-```typescript
+````typescript
 /**
  * Expression builder for complex WHERE conditions.
  * Passed to callbacks in where() methods.
@@ -531,7 +570,7 @@ export class Expression {
 export class ColumnRef {
   constructor(public readonly column: string) {}
 }
-```
+````
 
 **Update WHERE method:**
 
@@ -562,6 +601,7 @@ where<K extends keyof TRow>(
 ```
 
 **Use Cases:**
+
 - Complex AND/OR combinations
 - Nested conditions
 - Dynamic expression building
@@ -575,7 +615,7 @@ where<K extends keyof TRow>(
 
 **Implementation:**
 
-```typescript
+````typescript
 export class ExpressionBuilder<TRow> {
   /**
    * Create equality conditions from an object.
@@ -597,17 +637,17 @@ export class ExpressionBuilder<TRow> {
   and(conditions: Partial<TRow> | Expression[]): Expression {
     // If array, use existing implementation
     if (Array.isArray(conditions)) {
-      const sql = conditions.map(e => `(${e.sql})`).join(' AND ')
-      const params = conditions.flatMap(e => e.params)
-      return new Expression(sql, params)
+      const sql = conditions.map((e) => `(${e.sql})`).join(" AND ");
+      const params = conditions.flatMap((e) => e.params);
+      return new Expression(sql, params);
     }
 
     // Object syntax
-    const entries = Object.entries(conditions)
-    const clauses = entries.map(([key]) => `${key} = ?`)
-    const params = entries.map(([, value]) => value)
+    const entries = Object.entries(conditions);
+    const clauses = entries.map(([key]) => `${key} = ?`);
+    const params = entries.map(([, value]) => value);
 
-    return new Expression(clauses.join(' AND '), params)
+    return new Expression(clauses.join(" AND "), params);
   }
 
   /**
@@ -625,19 +665,19 @@ export class ExpressionBuilder<TRow> {
    */
   or(conditions: Partial<TRow> | Expression[]): Expression {
     if (Array.isArray(conditions)) {
-      const sql = conditions.map(e => `(${e.sql})`).join(' OR ')
-      const params = conditions.flatMap(e => e.params)
-      return new Expression(sql, params)
+      const sql = conditions.map((e) => `(${e.sql})`).join(" OR ");
+      const params = conditions.flatMap((e) => e.params);
+      return new Expression(sql, params);
     }
 
-    const entries = Object.entries(conditions)
-    const clauses = entries.map(([key]) => `${key} = ?`)
-    const params = entries.map(([, value]) => value)
+    const entries = Object.entries(conditions);
+    const clauses = entries.map(([key]) => `${key} = ?`);
+    const params = entries.map(([, value]) => value);
 
-    return new Expression(clauses.join(' OR '), params)
+    return new Expression(clauses.join(" OR "), params);
   }
 }
-```
+````
 
 ---
 
@@ -647,7 +687,7 @@ export class ExpressionBuilder<TRow> {
 
 **Implementation:**
 
-```typescript
+````typescript
 export class ExpressionBuilder<TRow> {
   /**
    * Create an EXISTS subquery expression.
@@ -664,19 +704,19 @@ export class ExpressionBuilder<TRow> {
    * ```
    */
   exists<T>(subquery: QueryBuilder<T, any>): Expression {
-    const { sql, params } = subquery.buildSQL()
-    return new Expression(`EXISTS (${sql})`, params)
+    const { sql, params } = subquery.buildSQL();
+    return new Expression(`EXISTS (${sql})`, params);
   }
 
   /**
    * Create a NOT EXISTS subquery expression.
    */
   notExists<T>(subquery: QueryBuilder<T, any>): Expression {
-    const { sql, params } = subquery.buildSQL()
-    return new Expression(`NOT EXISTS (${sql})`, params)
+    const { sql, params } = subquery.buildSQL();
+    return new Expression(`NOT EXISTS (${sql})`, params);
   }
 }
-```
+````
 
 **Note:** Requires making `buildSQL()` public or adding a method to compile without executing.
 
@@ -695,22 +735,23 @@ Instead of building SQL strings directly, create intermediate operation nodes:
 ```typescript
 // Example structure (simplified)
 interface SelectQueryNode {
-  kind: 'SelectQuery'
-  from: TableNode
-  where?: WhereNode
-  orderBy?: OrderByNode[]
-  limit?: LimitNode
+  kind: "SelectQuery";
+  from: TableNode;
+  where?: WhereNode;
+  orderBy?: OrderByNode[];
+  limit?: LimitNode;
 }
 
 interface WhereNode {
-  kind: 'Where'
-  expression: ExpressionNode
+  kind: "Where";
+  expression: ExpressionNode;
 }
 
 // etc.
 ```
 
 **Benefits:**
+
 - Query transformations
 - Plugin system
 - Query optimization
@@ -730,7 +771,7 @@ interface WhereNode {
 
 ```typescript
 interface QueryPlugin {
-  transformQuery(node: QueryNode): QueryNode
+  transformQuery(node: QueryNode): QueryNode;
 }
 
 export class QueryBuilder {
@@ -741,6 +782,7 @@ export class QueryBuilder {
 ```
 
 **Use Cases:**
+
 - Soft delete plugins
 - Multi-tenancy filters
 - Query logging
@@ -764,7 +806,7 @@ export class QueryBuilder {
    * Useful for inspection, caching, or preparation.
    */
   compile(): { sql: string; params: unknown[] } {
-    return this.buildSQL()
+    return this.buildSQL();
   }
 
   /**
@@ -772,9 +814,9 @@ export class QueryBuilder {
    * Only works with SQLite's EXPLAIN QUERY PLAN.
    */
   async explain(): Promise<any[]> {
-    const { sql, params } = this.buildSQL()
-    const explainSql = `EXPLAIN QUERY PLAN ${sql}`
-    return this.executeQuery(explainSql, params)
+    const { sql, params } = this.buildSQL();
+    const explainSql = `EXPLAIN QUERY PLAN ${sql}`;
+    return this.executeQuery(explainSql, params);
   }
 }
 ```
@@ -803,6 +845,7 @@ export class QueryBuilder {
 ### Testing Requirements
 
 For each improvement:
+
 1. Add unit tests covering:
    - Happy path
    - Edge cases
@@ -822,11 +865,13 @@ For each improvement:
 ### Breaking Changes
 
 **Phase 1 Considerations:**
+
 - #1 (Immutability) is technically breaking but should be transparent
 - Test all existing code to ensure compatibility
 - Consider providing compatibility mode if needed
 
 **Migration Path:**
+
 - All changes should be additive where possible
 - Deprecate old methods before removing
 - Provide migration guide for breaking changes
@@ -841,71 +886,79 @@ Here's what the improved API will look like:
 ```typescript
 // Reusable query fragments with $call
 const withActiveStatus = <T extends QueryBuilder<any, any>>(qb: T) =>
-  qb.where('status', '=', 'active')
-    .where('deletedAt', 'IS NULL', null)
+  qb.where("status", "=", "active").where("deletedAt", "IS NULL", null);
 
-const withPagination = (page: number, pageSize: number) =>
+const withPagination =
+  (page: number, pageSize: number) =>
   <T extends QueryBuilder<any, any>>(qb: T) =>
-    qb.limit(pageSize).skip((page - 1) * pageSize)
+    qb.limit(pageSize).skip((page - 1) * pageSize);
 
 // Complex conditional queries with $if
-const users = await db.query('users')
+const users = await db
+  .query("users")
   .$call(withActiveStatus)
-  .$if(searchTerm !== null, qb =>
-    qb.where(eb => eb.or([
-      eb('firstName', 'LIKE', `%${searchTerm}%`),
-      eb('lastName', 'LIKE', `%${searchTerm}%`),
-      eb('email', 'LIKE', `%${searchTerm}%`)
-    ]))
+  .$if(searchTerm !== null, (qb) =>
+    qb.where((eb) =>
+      eb.or([
+        eb("firstName", "LIKE", `%${searchTerm}%`),
+        eb("lastName", "LIKE", `%${searchTerm}%`),
+        eb("email", "LIKE", `%${searchTerm}%`),
+      ])
+    )
   )
-  .$if(role !== null, qb => qb.where('role', '=', role))
+  .$if(role !== null, (qb) => qb.where("role", "=", role))
   .$call(withPagination(page, 20))
-  .orderBy('createdAt', 'DESC')
-  .all()
+  .orderBy("createdAt", "DESC")
+  .all();
 
 // Column comparisons with whereRef
-const invalidOrders = await db.query('orders')
-  .whereRef('shippedAt', '<', 'orderedAt')
-  .all()
+const invalidOrders = await db
+  .query("orders")
+  .whereRef("shippedAt", "<", "orderedAt")
+  .all();
 
 // Complex expressions with ExpressionBuilder
-const premiumUsers = await db.query('users')
-  .where(eb => eb.and([
-    eb.or([
-      eb('subscriptionType', '=', 'premium'),
-      eb('subscriptionType', '=', 'enterprise')
-    ]),
-    eb('subscriptionExpiry', '>', new Date()),
-    eb.exists(
-      db.query('payments')
-        .whereRef('payments.userId', '=', 'users.id')
-        .where('payments.status', '=', 'completed')
-    )
-  ]))
-  .all()
+const premiumUsers = await db
+  .query("users")
+  .where((eb) =>
+    eb.and([
+      eb.or([
+        eb("subscriptionType", "=", "premium"),
+        eb("subscriptionType", "=", "enterprise"),
+      ]),
+      eb("subscriptionExpiry", ">", new Date()),
+      eb.exists(
+        db
+          .query("payments")
+          .whereRef("payments.userId", "=", "users.id")
+          .where("payments.status", "=", "completed")
+      ),
+    ])
+  )
+  .all();
 
 // Safe query builder reuse (immutability)
-const baseQuery = db.query('products')
-  .where('published', '=', true)
+const baseQuery = db.query("products").where("published", "=", true);
 
-const cheapProducts = await baseQuery.where('price', '<', 20).all()
-const expensiveProducts = await baseQuery.where('price', '>', 100).all()
+const cheapProducts = await baseQuery.where("price", "<", 20).all();
+const expensiveProducts = await baseQuery.where("price", ">", 100).all();
 // baseQuery is unchanged
 
 // Dynamic query building with clear methods
-let query = db.query('orders')
-  .where('status', '=', 'pending')
-  .orderBy('createdAt', 'DESC')
+let query = db
+  .query("orders")
+  .where("status", "=", "pending")
+  .orderBy("createdAt", "DESC");
 
 if (showAll) {
-  query = query.clearWhere()
+  query = query.clearWhere();
 }
 
-if (sortBy === 'amount') {
-  query = query.clearOrderBy().orderBy('amount', 'DESC')
+if (sortBy === "amount") {
+  query = query.clearOrderBy().orderBy("amount", "DESC");
 }
 
-const results = await query.all()
+const results = await query.all();
 ```
 
 ---

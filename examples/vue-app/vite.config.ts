@@ -4,15 +4,19 @@ import path from "node:path";
 
 export default defineConfig({
   optimizeDeps: {
-    exclude: ["@sqlite.org/sqlite-wasm"]
-  }, plugins: [vue()], resolve: {
+    exclude: ["@sqlite.org/sqlite-wasm"],
+  },
+  plugins: [vue()],
+  resolve: {
     alias: {
       "@alexop/sqlite-core": path.resolve(__dirname, "../../packages/core/src"),
-      "@alexop/sqlite-vue": path.resolve(__dirname, "../../packages/vue/src")
-    }
-  }, server: {
+      "@alexop/sqlite-vue": path.resolve(__dirname, "../../packages/vue/src"),
+    },
+  },
+  server: {
     headers: {
-      "Cross-Origin-Embedder-Policy": "require-corp", "Cross-Origin-Opener-Policy": "same-origin"
-    }
-  }
+      "Cross-Origin-Embedder-Policy": "require-corp",
+      "Cross-Origin-Opener-Policy": "same-origin",
+    },
+  },
 });

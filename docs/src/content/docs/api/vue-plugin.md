@@ -12,7 +12,7 @@ Creates a Vue plugin for SQLite integration.
 ```typescript
 function createSQLite<TSchema extends SchemaRegistry>(
   config: SQLiteConfig<TSchema>
-): Plugin
+): Plugin;
 ```
 
 ### Parameters
@@ -37,30 +37,32 @@ Vue `Plugin` instance to install with `app.use()`.
 ### Example
 
 ```typescript
-import { createApp } from 'vue';
-import { createSQLite } from '@alexop/sqlite-vue';
-import { z } from 'zod';
-import App from './App.vue';
+import { createApp } from "vue";
+import { createSQLite } from "@alexop/sqlite-vue";
+import { z } from "zod";
+import App from "./App.vue";
 
 const app = createApp(App);
 
-app.use(createSQLite({
-  schema: {
-    todos: z.object({
-      id: z.string(),
-      title: z.string(),
-    })
-  } as const,
-  filename: 'file:app.sqlite3?vfs=opfs',
-  migrations: [
-    {
-      version: 1,
-      sql: 'CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)'
-    }
-  ]
-}));
+app.use(
+  createSQLite({
+    schema: {
+      todos: z.object({
+        id: z.string(),
+        title: z.string(),
+      }),
+    } as const,
+    filename: "file:app.sqlite3?vfs=opfs",
+    migrations: [
+      {
+        version: 1,
+        sql: "CREATE TABLE todos (id TEXT PRIMARY KEY, title TEXT NOT NULL)",
+      },
+    ],
+  })
+);
 
-app.mount('#app');
+app.mount("#app");
 ```
 
 ## useSQLiteClientAsync
@@ -68,8 +70,9 @@ app.mount('#app');
 Returns a promise that resolves to the SQLite client.
 
 ```typescript
-function useSQLiteClientAsync<TSchema extends SchemaRegistry>():
-  Promise<SQLiteClient<TSchema>>
+function useSQLiteClientAsync<TSchema extends SchemaRegistry>(): Promise<
+  SQLiteClient<TSchema>
+>;
 ```
 
 ### Returns
@@ -125,7 +128,7 @@ Returns reactive query results that auto-update when data changes.
 function useSQLiteQuery<T>(
   queryFn: (db: SQLiteClient) => Promise<T>,
   options?: UseSQLiteQueryOptions
-): UseSQLiteQueryReturn<T>
+): UseSQLiteQueryReturn<T>;
 ```
 
 ### Parameters
@@ -172,14 +175,21 @@ interface UseSQLiteQueryReturn<T> {
 
 ```vue
 <script setup lang="ts">
-import { useSQLiteQuery } from '@alexop/sqlite-vue';
+import { useSQLiteQuery } from "@alexop/sqlite-vue";
 
-const { rows: todos, loading, error, refresh } = useSQLiteQuery(
-  (db) => db.query('todos')
-    .where('completed', '=', false)
-    .orderBy('createdAt', 'DESC')
-    .all(),
-  { tables: ['todos'] }
+const {
+  rows: todos,
+  loading,
+  error,
+  refresh,
+} = useSQLiteQuery(
+  (db) =>
+    db
+      .query("todos")
+      .where("completed", "=", false)
+      .orderBy("createdAt", "DESC")
+      .all(),
+  { tables: ["todos"] }
 );
 
 async function forceRefresh() {
@@ -189,9 +199,7 @@ async function forceRefresh() {
 
 <template>
   <div>
-    <button @click="forceRefresh" :disabled="loading">
-      Refresh
-    </button>
+    <button @click="forceRefresh" :disabled="loading">Refresh</button>
 
     <div v-if="loading">Loading...</div>
     <div v-else-if="error">Error: {{ error.message }}</div>
@@ -213,24 +221,23 @@ Array of table names to subscribe to. When `db.notifyTable(tableName)` is called
 ```vue
 <script setup lang="ts">
 // Subscribe to single table
-const { rows } = useSQLiteQuery(
-  (db) => db.query('todos').all(),
-  { tables: ['todos'] }
-);
+const { rows } = useSQLiteQuery((db) => db.query("todos").all(), {
+  tables: ["todos"],
+});
 
 // Subscribe to multiple tables
 const { rows } = useSQLiteQuery(
   async (db) => {
-    const todos = await db.query('todos').all();
-    const users = await db.query('users').all();
+    const todos = await db.query("todos").all();
+    const users = await db.query("users").all();
     return { todos, users };
   },
-  { tables: ['todos', 'users'] }
+  { tables: ["todos", "users"] }
 );
 
 // No subscription (query won't auto-update)
 const { rows } = useSQLiteQuery(
-  (db) => db.query('todos').all()
+  (db) => db.query("todos").all()
   // No tables option
 );
 </script>
@@ -243,15 +250,15 @@ Controls whether the query executes on mount.
 ```vue
 <script setup lang="ts">
 // Executes immediately (default)
-const { rows: todos } = useSQLiteQuery(
-  (db) => db.query('todos').all(),
-  { tables: ['todos'], immediate: true }
-);
+const { rows: todos } = useSQLiteQuery((db) => db.query("todos").all(), {
+  tables: ["todos"],
+  immediate: true,
+});
 
 // Waits for manual refresh
 const { rows: lazyTodos, refresh } = useSQLiteQuery(
-  (db) => db.query('todos').all(),
-  { tables: ['todos'], immediate: false }
+  (db) => db.query("todos").all(),
+  { tables: ["todos"], immediate: false }
 );
 
 async function loadTodos() {
@@ -276,10 +283,9 @@ async function loadTodos() {
 Reactive ref containing the query results.
 
 ```typescript
-const { rows } = useSQLiteQuery(
-  (db) => db.query('todos').all(),
-  { tables: ['todos'] }
-);
+const { rows } = useSQLiteQuery((db) => db.query("todos").all(), {
+  tables: ["todos"],
+});
 
 // Type: Ref<Array<Todo> | null>
 // null while loading, Array<Todo> after success
@@ -342,20 +348,19 @@ const dbSchema = {
     id: z.string(),
     title: z.string(),
     completed: z.boolean(),
-  })
+  }),
 } as const;
 
 // All columns
-const { rows } = useSQLiteQuery(
-  (db) => db.query('todos').all(),
-  { tables: ['todos'] }
-);
+const { rows } = useSQLiteQuery((db) => db.query("todos").all(), {
+  tables: ["todos"],
+});
 // rows type: Ref<Array<{ id: string, title: string, completed: boolean }> | null>
 
 // Selected columns
 const { rows } = useSQLiteQuery(
-  (db) => db.query('todos').select('id', 'title').all(),
-  { tables: ['todos'] }
+  (db) => db.query("todos").select("id", "title").all(),
+  { tables: ["todos"] }
 );
 // rows type: Ref<Array<{ id: string, title: string }> | null>
 
@@ -367,13 +372,14 @@ interface Stats {
 
 const { rows } = useSQLiteQuery<Stats>(
   async (db) => {
-    const total = await db.query('todos').count();
-    const completed = await db.query('todos')
-      .where('completed', '=', true)
+    const total = await db.query("todos").count();
+    const completed = await db
+      .query("todos")
+      .where("completed", "=", true)
       .count();
     return { total, completed };
   },
-  { tables: ['todos'] }
+  { tables: ["todos"] }
 );
 // rows type: Ref<Stats | null>
 ```
@@ -384,51 +390,52 @@ Full todo app with all features:
 
 ```vue
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useSQLiteQuery, useSQLiteClientAsync } from '@alexop/sqlite-vue';
+import { ref } from "vue";
+import { useSQLiteQuery, useSQLiteClientAsync } from "@alexop/sqlite-vue";
 
 // Query
-const { rows: todos, loading, error } = useSQLiteQuery(
-  (db) => db.query('todos')
-    .orderBy('createdAt', 'DESC')
-    .all(),
-  { tables: ['todos'] }
+const {
+  rows: todos,
+  loading,
+  error,
+} = useSQLiteQuery(
+  (db) => db.query("todos").orderBy("createdAt", "DESC").all(),
+  { tables: ["todos"] }
 );
 
 // Mutations
 const dbPromise = useSQLiteClientAsync();
-const newTitle = ref('');
+const newTitle = ref("");
 
 async function addTodo() {
   if (!newTitle.value.trim()) return;
 
   const db = await dbPromise;
-  await db.insert('todos').values({
+  await db.insert("todos").values({
     id: crypto.randomUUID(),
     title: newTitle.value,
   });
 
-  db.notifyTable('todos');
-  newTitle.value = '';
+  db.notifyTable("todos");
+  newTitle.value = "";
 }
 
 async function toggleTodo(id: string, completed: boolean) {
   const db = await dbPromise;
-  await db.update('todos')
-    .where('id', '=', id)
+  await db
+    .update("todos")
+    .where("id", "=", id)
     .set({ completed: !completed })
     .execute();
 
-  db.notifyTable('todos');
+  db.notifyTable("todos");
 }
 
 async function deleteTodo(id: string) {
   const db = await dbPromise;
-  await db.delete('todos')
-    .where('id', '=', id)
-    .execute();
+  await db.delete("todos").where("id", "=", id).execute();
 
-  db.notifyTable('todos');
+  db.notifyTable("todos");
 }
 </script>
 
@@ -437,10 +444,7 @@ async function deleteTodo(id: string) {
     <h1>Todos</h1>
 
     <form @submit.prevent="addTodo">
-      <input
-        v-model="newTitle"
-        placeholder="What needs to be done?"
-      />
+      <input v-model="newTitle" placeholder="What needs to be done?" />
       <button type="submit">Add</button>
     </form>
 
@@ -459,9 +463,7 @@ async function deleteTodo(id: string) {
         <button @click="deleteTodo(todo.id)">Delete</button>
       </li>
     </ul>
-    <div v-else>
-      No todos yet. Add one above!
-    </div>
+    <div v-else>No todos yet. Add one above!</div>
   </div>
 </template>
 

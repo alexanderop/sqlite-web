@@ -66,9 +66,9 @@ import { createClientWrapper, type Options, type SQLiteClient } from "./client";
  * const users = await db.query('users').all();
  * ```
  */
-export async function createSQLiteClient<TSchema extends import("./types").SchemaRegistry>(
-  opts: Options<TSchema>
-): Promise<SQLiteClient<TSchema>> {
+export async function createSQLiteClient<
+  TSchema extends import("./types").SchemaRegistry,
+>(opts: Options<TSchema>): Promise<SQLiteClient<TSchema>> {
   const coreClient = await createCoreClient({
     filename: opts.filename,
     migrations: opts.migrations,
